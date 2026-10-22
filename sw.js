@@ -1,8 +1,9 @@
 // 오프라인 캐시. 파일을 고치면 VERSION을 올린다.
-const VERSION = 'undong-v1';
+const VERSION = 'undong-v2';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/data-exercises.js', 'js/data-foods.js', 'js/data-lines.js', 'js/ui-art.js', 'js/app.js',
+  'js/vendor/three.min.js', 'js/data-gym.js', 'js/data-exercises.js', 'js/data-foods.js', 'js/data-diet.js', 'js/data-lines.js',
+  'js/ui-art.js', 'js/body3d.js', 'js/core.js', 'js/views.js', 'js/views2.js', 'js/app.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 
