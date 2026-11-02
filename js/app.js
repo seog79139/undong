@@ -501,6 +501,9 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('focusin', e => { if (e.target.classList && e.target.classList.contains('set-in')) e.target.select(); });
 document.addEventListener('pointerdown', unlockAudio, { passive: true });
+// 화면 확대 막기: 아이폰 핀치 줌과 두 손가락 확대 (3D 모형 확대는 따로 처리)
+['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if ($('.viewer')) ACT['viewer-close'](); else if ($('#sheetback')) closeSheet(); }
   if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('set-in')) e.target.blur();

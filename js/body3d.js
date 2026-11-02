@@ -1,15 +1,41 @@
-// 3D 인체 모형 렌더링. 메쉬는 body-mesh.js가 만든다.
-// 어두운 그래파이트 몸에 근섬유 결, 피로한 근육은 주황·빨강으로 빛난다.
-// 스와이프 = 회전, 두 손가락·휠 = 확대, 근육을 누르면 그 근육으로 다가간다.
+// 3D 홀로그램 인체 모형. 좌우로 스와이프하면 돌아가고, 근육을 누르면 선택된다.
 'use strict';
 
 const Body3D = (() => {
   let inst = null;
-  const SUB_KEYS = BodyMesh.keys;
 
-  /* ---------- 색 ---------- */
-  // 회복률(0~100) → 색 (목록·그래프와 같은 색)
-  const STOPS = [[0, [255, 59, 48]], [40, [255, 122, 26]], [70, [255, 196, 61]], [92, [61, 220, 170]], [100, [72, 200, 255]]];
+  const VERT = `
+    varying vec3 vN; varying vec3 vV; varying float vY;
+    void main() {
+      vec4 wp = modelMatrix * vec4(position, 1.0);
+      vY = wp.y;
+      vec4 mv = viewMatrix * wp;
+      vN = normalize(normalMatrix * normal);
+      vV = normalize(-mv.xyz);
+      gl_Position = projectionMatrix * mv;
+    }`;
+  const FRAG = `
+    uniform vec3 uColor; uniform float uBase; uniform float uRim; uniform float uTime; uniform float uAlpha;
+    varying vec3 vN; varying vec3 vV; varying float vY;
+    void main() {
+      float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));
+      float rim = pow(f, 2.2);
+      float scan = 0.88 + 0.12 * sin(vY * 160.0 - uTime * 3.0);
+      float sweep = smoothstep(0.06, 0.0, abs(vY - mod(uTime * 0.35, 2.2) + 0.2)) * 0.6;
+      vec3 c = uColor * (uBase + rim * uRim + sweep) * scan;
+      gl_FragColor = vec4(c, uAlpha * (0.35 + rim));
+    }`;
+
+  function holoMat(THREE, color, base, rim, alpha) {
+    return new THREE.ShaderMaterial({
+      uniforms: { uColor: { value: new THREE.Color(color) }, uBase: { value: base }, uRim: { value: rim }, uTime: { value: 0 }, uAlpha: { value: alpha } },
+      vertexShader: VERT, fragmentShader: FRAG,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    });
+  }
+
+  // 회복률(0~100) → 색
+  const STOPS = [[0, [255, 59, 59]], [40, [255, 138, 31]], [70, [255, 210, 63]], [92, [46, 230, 168]], [100, [46, 214, 255]]];
   function recColor(p) {
     p = Math.max(0, Math.min(100, p));
     for (let i = 1; i < STOPS.length; i++) {
@@ -22,311 +48,254 @@ const Body3D = (() => {
   }
   const rgbHex = c => '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
 
-  const NUM = SUB_KEYS.length + 1;
-  const VERT = `
-    attribute float aMid; attribute float aMid2; attribute float aW; attribute float aGap; attribute float aFib;
-    uniform vec3 uCol[${NUM}];
-    uniform float uF[${NUM}];
-    uniform float uSel;
-    varying vec3 vN; varying vec3 vV; varying vec3 vCol; varying vec3 vP;
-    varying float vF; varying float vSkin; varying float vGap; varying float vFib; varying float vSel;
-    void main() {
-      int a = int(aMid + 0.5), b = int(aMid2 + 0.5);
-      vCol = mix(uCol[a], uCol[b], aW);
-      float fa = uF[a], fb = uF[b];
-      vSkin = mix(fa < -0.5 ? 1.0 : 0.0, fb < -0.5 ? 1.0 : 0.0, aW);
-      vF = mix(max(fa, 0.0), max(fb, 0.0), aW);
-      vGap = aGap; vFib = aFib; vP = position;
-      float s1 = (uSel > 0.5 && abs(aMid - uSel) < 0.5) ? 1.0 : 0.0;
-      float s2 = (uSel > 0.5 && abs(aMid2 - uSel) < 0.5) ? 1.0 : 0.0;
-      vSel = mix(s1, s2, aW);
-      vec4 mv = modelViewMatrix * vec4(position, 1.0);
-      vN = normalize(normalMatrix * normal);
-      vV = normalize(-mv.xyz);
-      gl_Position = projectionMatrix * mv;
-    }`;
-  const FRAG = `
-    uniform float uFocus; uniform float uTime; uniform float uScan;
-    varying vec3 vN; varying vec3 vV; varying vec3 vCol; varying vec3 vP;
-    varying float vF; varying float vSkin; varying float vGap; varying float vFib; varying float vSel;
-    void main() {
-      vec3 n = normalize(vN), v = normalize(vV);
-      vec3 L = normalize(vec3(-0.35, 0.8, 0.65));
-      float wrap = max(dot(n, L) * 0.5 + 0.5, 0.0);
-      vec3 H = normalize(L + v);
-      float spec = pow(max(dot(n, H), 0.0), 56.0);
-      float fres = pow(1.0 - max(dot(n, v), 0.0), 2.6);
-      float muscle = 1.0 - vSkin;
-      float tint = smoothstep(0.0, 0.55, vF) * muscle;
-
-      // 근섬유 결 (멀리서 보면 자연스럽게 사라진다)
-      float fs = vFib * 760.0;
-      float fiber = (0.5 + 0.5 * sin(fs)) * clamp(1.6 - fwidth(fs), 0.0, 1.0) * muscle;
-      vec3 base = mix(vec3(0.085, 0.11, 0.15), vec3(0.025, 0.028, 0.036), vSkin);
-      base *= 1.0 - fiber * 0.3;
-      base = mix(base, vCol * 0.55, tint * 0.92);
-
-      vec3 c = base * (0.12 + 0.9 * wrap * wrap);
-      c += spec * mix(0.55, 0.28, vSkin) * vec3(0.85, 0.93, 1.0);
-      vec3 rim = mix(vec3(0.22, 0.55, 1.0), vCol, tint);
-      c += rim * fres * (0.32 + tint * 0.8);
-      c += vCol * vF * vF * muscle * (0.32 + 0.12 * sin(uTime * 2.4));
-
-      // 근육 사이 홈
-      float gw = fwidth(vGap) * 1.2;
-      c *= 1.0 - (1.0 - smoothstep(0.0, 0.0035 + gw, vGap)) * 0.78;
-
-      // 스캔 빛
-      float sd = vP.y - uScan;
-      c += vec3(0.35, 0.8, 1.0) * (smoothstep(0.01, 0.0, abs(sd)) * 0.7 + smoothstep(0.18, 0.0, sd) * step(0.0, sd) * 0.05);
-
-      c += vSel * (vCol * 0.22 + fres * vec3(0.55, 0.88, 1.0) * 0.7) * (0.85 + 0.15 * sin(uTime * 4.0));
-
-      // 톤 매핑 + 감마
-      c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
-      c = pow(clamp(c, 0.0, 1.0), vec3(1.0 / 2.2));
-      // 선택한 근육만 남기고 나머지는 어둡게 (색 보정 뒤에 해야 확실히 어두워진다)
-      float dim = uFocus * (1.0 - vSel);
-      c = mix(c, vec3(dot(c, vec3(0.3, 0.5, 0.2))) * 0.28, dim);
-      gl_FragColor = vec4(c, 1.0);
-    }`;
-  const FLOOR_FRAG = `
-    uniform float uTime; varying vec2 vUv;
-    void main() {
-      vec2 p = vUv * 2.0 - 1.0; float r = length(p), a = atan(p.y, p.x);
-      float glow = pow(max(1.0 - r, 0.0), 2.2) * 0.32;
-      float ring = smoothstep(0.012, 0.0, abs(r - 0.66)) * 0.55;
-      float dash = smoothstep(0.008, 0.0, abs(r - 0.8)) * step(0.0, sin(a * 24.0 + uTime * 0.6)) * 0.35;
-      float tick = smoothstep(0.006, 0.0, abs(r - 0.93)) * step(0.92, fract(a * 9.55)) * 0.5;
-      gl_FragColor = vec4(vec3(0.25, 0.68, 1.0), glow + ring + dash + tick);
-    }`;
-
-  // 메쉬는 한 번만 만든다 (워커 → 안 되면 본 화면)
-  let meshP = null;
-  function loadMesh() {
-    if (meshP) return meshP;
-    meshP = new Promise(res => {
-      const local = () => setTimeout(() => res(BodyMesh.build()), 30);
-      try {
-        const w = new Worker('js/body-mesh.js');
-        const to = setTimeout(() => { w.terminate(); local(); }, 8000);
-        w.onmessage = e => { clearTimeout(to); w.terminate(); res(e.data); };
-        w.onerror = () => { clearTimeout(to); w.terminate(); local(); };
-        w.postMessage(1);
-      } catch (e) { local(); }
-    });
-    return meshP;
-  }
-
   function build(wrap, opts) {
     const THREE = window.THREE;
     const canvas = document.createElement('canvas');
     canvas.className = 'holo-canvas';
     let renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' });
     } catch (e) { return null; }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 50);
+    const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
+    camera.position.set(0, 1.0, 4.4);
+    camera.lookAt(0, 0.9, 0);
+
+    const root = new THREE.Group();
+    scene.add(root);
     const body = new THREE.Group();
-    scene.add(body);
+    root.add(body);
 
-    const cols = new Float32Array(NUM * 3), fat = new Float32Array(NUM);
-    const mat = new THREE.ShaderMaterial({
-      uniforms: { uCol: { value: cols }, uF: { value: fat }, uSel: { value: 0 }, uFocus: { value: 0 }, uTime: { value: 0 }, uScan: { value: -1 } },
-      vertexShader: VERT, fragmentShader: FRAG,
+    const BASE = '#36c8ff';
+    const skinMat = holoMat(THREE, BASE, 0.07, 1.0, 0.5);
+    const mats = [skinMat];
+    const SPH = new THREE.SphereGeometry(1, 22, 16);
+    const up = new THREE.Vector3(0, 1, 0);
+    const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+    function blob(mat, pos, scale, rotZ = 0) {
+      const m = new THREE.Mesh(SPH, mat);
+      m.position.copy(pos); m.scale.set(...scale); m.rotation.z = rotZ;
+      return m;
+    }
+    // a→b 방향으로 길쭉한 타원체
+    function along(mat, a, b, t, len, r, depth = 1, off = V(0, 0, 0)) {
+      const dir = b.clone().sub(a).normalize();
+      const m = new THREE.Mesh(SPH, mat);
+      m.position.copy(a.clone().lerp(b, t).add(off));
+      m.quaternion.setFromUnitVectors(up, dir);
+      m.scale.set(r, len, r * depth);
+      return m;
+    }
+
+    // 몸 실루엣
+    const J = {};
+    [-1, 1].forEach(s => {
+      J['sh' + s] = V(s * 0.215, 1.43, 0); J['el' + s] = V(s * 0.262, 1.15, -0.01); J['wr' + s] = V(s * 0.29, 0.9, 0.03);
+      J['hp' + s] = V(s * 0.095, 0.9, 0); J['kn' + s] = V(s * 0.102, 0.5, 0.015); J['an' + s] = V(s * 0.1, 0.1, -0.01);
     });
-    mat.extensions = { derivatives: true };
-    let M = null, mesh = null;
-
-    const floorMat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
-      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-      fragmentShader: FLOOR_FRAG, transparent: true, depthWrite: false,
+    const skin = [
+      blob(skinMat, V(0, 1.635, 0.005), [0.098, 0.118, 0.108]),
+      along(skinMat, V(0, 1.47, 0), V(0, 1.58, 0), 0.5, 0.07, 0.05),
+      blob(skinMat, V(0, 1.3, 0), [0.2, 0.235, 0.125]),
+      blob(skinMat, V(0, 1.07, 0), [0.152, 0.165, 0.105]),
+      blob(skinMat, V(0, 0.93, 0), [0.168, 0.115, 0.115]),
+    ];
+    [-1, 1].forEach(s => {
+      skin.push(
+        blob(skinMat, V(s * 0.21, 1.42, 0), [0.06, 0.06, 0.06]),
+        along(skinMat, J['sh' + s], J['el' + s], 0.5, 0.16, 0.046),
+        along(skinMat, J['el' + s], J['wr' + s], 0.5, 0.14, 0.037),
+        blob(skinMat, V(s * 0.3, 0.83, 0.03), [0.032, 0.055, 0.02]),
+        along(skinMat, J['hp' + s], J['kn' + s], 0.5, 0.23, 0.074),
+        along(skinMat, J['kn' + s], J['an' + s], 0.5, 0.22, 0.05),
+        blob(skinMat, V(s * 0.1, 0.035, 0.05), [0.045, 0.03, 0.11]),
+      );
     });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), floorMat);
-    floor.rotation.x = -Math.PI / 2; floor.position.y = 0.001;
-    scene.add(floor);
+    skin.forEach(m => body.add(m));
+    // 와이어프레임을 겹쳐 홀로그램 격자 느낌
+    const wireGeo = new THREE.SphereGeometry(1, 14, 10);
+    const wireMat = new THREE.MeshBasicMaterial({ color: 0x5fd8ff, wireframe: true, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false });
+    skin.forEach(m => {
+      const w = new THREE.Mesh(wireGeo, wireMat);
+      w.position.copy(m.position); w.quaternion.copy(m.quaternion); w.scale.copy(m.scale).multiplyScalar(1.015);
+      body.add(w);
+    });
 
-    const tag = document.createElement('div');
-    tag.className = 'holo-tag';
-    const loading = document.createElement('div');
-    loading.className = 'holo-load';
-    loading.innerHTML = '<i></i><span>3D 모형을 준비하고 있어요</span>';
+    // 근육
+    const muscleMeshes = [];
+    const muscleMats = {};
+    function mm(key) {
+      if (!muscleMats[key]) { muscleMats[key] = holoMat(THREE, BASE, 0.35, 1.3, 0.9); mats.push(muscleMats[key]); }
+      return muscleMats[key];
+    }
+    function addM(key, mesh) { mesh.userData.muscle = key; body.add(mesh); muscleMeshes.push(mesh); }
+    [-1, 1].forEach(s => {
+      addM('chest', blob(mm('chest'), V(s * 0.088, 1.335, 0.098), [0.088, 0.062, 0.042], s * -0.12));
+      addM('frontDelt', blob(mm('frontDelt'), V(s * 0.208, 1.428, 0.04), [0.043, 0.052, 0.035]));
+      addM('sideDelt', blob(mm('sideDelt'), V(s * 0.24, 1.415, 0), [0.036, 0.052, 0.043]));
+      addM('rearDelt', blob(mm('rearDelt'), V(s * 0.207, 1.425, -0.045), [0.043, 0.05, 0.033]));
+      addM('traps', blob(mm('traps'), V(s * 0.075, 1.468, -0.03), [0.078, 0.04, 0.048], s * 0.35));
+      addM('upperBack', blob(mm('upperBack'), V(s * 0.062, 1.335, -0.112), [0.062, 0.08, 0.03]));
+      addM('lats', blob(mm('lats'), V(s * 0.125, 1.22, -0.08), [0.062, 0.135, 0.045], s * 0.22));
+      addM('lowerBack', blob(mm('lowerBack'), V(s * 0.04, 1.06, -0.096), [0.036, 0.095, 0.03]));
+      addM('obliques', blob(mm('obliques'), V(s * 0.118, 1.1, 0.05), [0.04, 0.092, 0.05], s * -0.1));
+      [1.205, 1.13, 1.055].forEach(y => addM('abs', blob(mm('abs'), V(s * 0.034, y, 0.1), [0.031, 0.033, 0.022])));
+      addM('biceps', along(mm('biceps'), J['sh' + s], J['el' + s], 0.56, 0.1, 0.033, 0.8, V(0, 0, 0.026)));
+      addM('triceps', along(mm('triceps'), J['sh' + s], J['el' + s], 0.48, 0.12, 0.035, 0.8, V(0, 0, -0.028)));
+      addM('forearms', along(mm('forearms'), J['el' + s], J['wr' + s], 0.33, 0.11, 0.036, 0.85));
+      addM('glutes', blob(mm('glutes'), V(s * 0.082, 0.915, -0.078), [0.086, 0.092, 0.07]));
+      addM('quads', along(mm('quads'), J['hp' + s], J['kn' + s], 0.52, 0.18, 0.06, 0.7, V(s * 0.004, 0, 0.032)));
+      addM('hamstrings', along(mm('hamstrings'), J['hp' + s], J['kn' + s], 0.5, 0.17, 0.055, 0.7, V(0, 0, -0.032)));
+      addM('adductors', along(mm('adductors'), J['hp' + s], J['kn' + s], 0.3, 0.11, 0.036, 0.8, V(-s * 0.04, 0, 0.005)));
+      addM('calves', along(mm('calves'), J['kn' + s], J['an' + s], 0.3, 0.115, 0.044, 0.75, V(0, 0, -0.026)));
+    });
+
+    // 바닥 링, 입자
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x36c8ff, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const ring1 = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.435, 64), ringMat);
+    ring1.rotation.x = -Math.PI / 2;
+    const ring2 = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.505, 64, 1, 0, Math.PI * 1.4), ringMat.clone());
+    ring2.material.opacity = 0.35; ring2.rotation.x = -Math.PI / 2;
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.42, 48), new THREE.MeshBasicMaterial({ color: 0x36c8ff, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false }));
+    disc.rotation.x = -Math.PI / 2;
+    scene.add(ring1, ring2, disc);
+
+    const PN = 70, pg = new THREE.BufferGeometry(), pp = new Float32Array(PN * 3), ps = [];
+    for (let i = 0; i < PN; i++) {
+      const a = Math.random() * Math.PI * 2, r = 0.15 + Math.random() * 0.35;
+      pp[i * 3] = Math.cos(a) * r; pp[i * 3 + 1] = Math.random() * 1.8; pp[i * 3 + 2] = Math.sin(a) * r;
+      ps.push(0.002 + Math.random() * 0.004);
+    }
+    pg.setAttribute('position', new THREE.BufferAttribute(pp, 3));
+    const pts = new THREE.Points(pg, new THREE.PointsMaterial({ color: 0x7fe3ff, size: 0.012, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }));
+    scene.add(pts);
 
     // 상태
-    const HOME = [0, 0.9, 0];
-    let rotY = 0.35, vel = 0, rotT = null, lastInput = 0, selected = null, values = {}, pending = null;
-    let zoom = 1, zoomT = 1;
-    const focus = HOME.slice(), focusT = HOME.slice();
-    const ptrs = new Map();
-    let pinch = null, moved = 0, sx = 0, sy = 0, lx = 0, ly = 0, downAt = 0, running = false;
+    let rotY = 0.35, rotX = 0, vel = 0, target = null, lastInput = 0, selected = null, values = {};
+    let dragging = false, sx = 0, sy = 0, lx = 0, moved = 0, running = false, raf = 0;
+    // 확대: 배율과 바라보는 높이
+    let zoom = 1, zoomT = 1, fy = 0.9, fyT = 0.9, subVals = {};
+    const BACK = ['rearDelt', 'traps', 'upperBack', 'lats', 'lowerBack', 'triceps', 'glutes', 'hamstrings', 'calves'];
+    const groupY = {};
+    muscleMeshes.forEach(m => { const k = m.userData.muscle; (groupY[k] = groupY[k] || []).push(m.position.y); });
+    const setZoom = z => { zoomT = Math.max(1, Math.min(4, z)); if (zoomT <= 1.02) fyT = 0.9; lastInput = performance.now(); };
+    // 모형은 부위 단위라서, 누른 부위에서 가장 지친 세부 근육을 고른다
+    const worstSub = g => {
+      const subs = Object.keys(SUBS).filter(k => SUBS[k].group === g);
+      return subs.sort((a, b) => (subVals[a] ?? 100) - (subVals[b] ?? 100))[0] || null;
+    };
 
-    const lin = c => c.map(x => Math.pow(x / 255, 2.2));
     function paint() {
-      cols.set([0, 0, 0], 0); fat[0] = -1;
-      SUB_KEYS.forEach((k, i) => {
+      Object.entries(muscleMats).forEach(([k, mat]) => {
         const v = values[k] === undefined ? 100 : values[k];
-        cols.set(lin(recColor(v)), (i + 1) * 3);
-        fat[i + 1] = Math.max(0, Math.min(1, (95 - v) / 95));
+        mat.uniforms.uColor.value.set(rgbHex(recColor(v)));
+        const fatigue = 1 - v / 100;
+        mat.uniforms.uBase.value = 0.18 + fatigue * 0.55;
+        mat.uniforms.uAlpha.value = 0.6 + fatigue * 0.4;
       });
     }
 
-    loadMesh().then(m => {
-      M = m;
-      const geo = new THREE.BufferGeometry();
-      const A = (name, arr, n) => geo.setAttribute(name, new THREE.BufferAttribute(arr, n));
-      A('position', M.pos, 3); A('normal', M.nor, 3); A('aMid', M.mid, 1); A('aMid2', M.mid2, 1); A('aW', M.mw, 1); A('aGap', M.gap, 1); A('aFib', M.fib, 1);
-      geo.setIndex(new THREE.BufferAttribute(M.idx, 1));
-      mesh = new THREE.Mesh(geo, mat);
-      body.add(mesh);
-      loading.remove();
-      scanAt = performance.now();
-      if (pending) { const p = pending; pending = null; api.select(p.k, p.o); }
-    });
-
     const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
     function pickAt(cx, cy) {
-      if (!mesh) return null;
       const r = canvas.getBoundingClientRect();
       ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(ndc, camera);
-      const hit = ray.intersectObject(mesh, false)[0];
-      if (!hit) return null;
-      const m = M.mid[hit.face.a];
-      return m && SUB_KEYS[m - 1][0] !== '_' ? SUB_KEYS[m - 1] : null;
+      const hit = ray.intersectObjects(muscleMeshes, false)[0];
+      return hit ? hit.object.userData.muscle : null;
     }
-    const setZoom = z => {
-      zoomT = Math.max(1, Math.min(5, z));
-      canvas.style.touchAction = zoomT > 1.05 ? 'none' : 'pan-y';
-      if (zoomT <= 1.02) focusT.splice(0, 3, ...HOME);
-      lastInput = performance.now();
-    };
 
     canvas.addEventListener('pointerdown', e => {
-      ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-      if (ptrs.size === 2) {
-        const [a, b] = [...ptrs.values()];
-        pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, z: zoomT };
-        moved = 99;
-      } else if (ptrs.size === 1) {
-        sx = lx = e.clientX; sy = ly = e.clientY; moved = 0; vel = 0; rotT = null; downAt = performance.now();
-      }
-      lastInput = performance.now();
+      dragging = true; sx = lx = e.clientX; sy = e.clientY; moved = 0; vel = 0; target = null; lastInput = performance.now();
     });
     window.addEventListener('pointermove', e => {
-      if (!ptrs.has(e.pointerId)) return;
-      ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-      if (pinch && ptrs.size >= 2) {
-        const [a, b] = [...ptrs.values()];
-        setZoom(pinch.z * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinch.d);
-        return;
-      }
-      if (ptrs.size !== 1 || pinch) return;
-      const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
+      if (!dragging) return;
+      const dx = e.clientX - lx; lx = e.clientX;
       moved = Math.max(moved, Math.abs(e.clientX - sx), Math.abs(e.clientY - sy));
-      rotY += dx * 0.011; vel = dx * 0.011;
-      if (zoomT > 1.05) focusT[1] = Math.max(0.1, Math.min(1.7, focusT[1] + dy * 0.0028 / zoom));
-      lastInput = performance.now();
+      rotY += dx * 0.012; vel = dx * 0.012; lastInput = performance.now();
     });
-    const up = e => {
-      if (!ptrs.has(e.pointerId)) return;
-      ptrs.delete(e.pointerId);
-      if (ptrs.size) return;
-      const wasPinch = !!pinch; pinch = null;
-      lastInput = performance.now();
-      if (!wasPinch && e.type === 'pointerup' && moved < 8 && performance.now() - downAt < 500 && opts.onSelect) opts.onSelect(pickAt(e.clientX, e.clientY));
-    };
-    window.addEventListener('pointerup', up);
-    window.addEventListener('pointercancel', up);
+    window.addEventListener('pointerup', e => {
+      if (!dragging) return;
+      dragging = false; lastInput = performance.now();
+      if (moved < 8) {
+        const k = pickAt(e.clientX, e.clientY);
+        if (opts.onSelect) opts.onSelect(k ? worstSub(k) : null);
+      }
+    });
+    window.addEventListener('pointercancel', () => { dragging = false; });
     canvas.addEventListener('wheel', e => { e.preventDefault(); setZoom(zoomT * Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
 
     function resize() {
-      const w = wrap.clientWidth || 300, h = wrap.clientHeight || 400;
+      const w = wrap.clientWidth || 300, h = wrap.clientHeight || 360;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     }
 
-    const rotP = (p, a) => [p[0] * Math.cos(a) + p[2] * Math.sin(a), p[1], -p[0] * Math.sin(a) + p[2] * Math.cos(a)];
-    const v3 = new THREE.Vector3();
     const t0 = performance.now();
-    let last = t0, scanAt = 0;
     function frame() {
       if (!running) return;
       if (!document.body.contains(canvas)) { running = false; return; }
       const now = performance.now(), t = (now - t0) / 1000;
-      // 프레임 속도와 상관없이 같은 빠르기로 따라가게
-      const step = Math.min(0.25, (now - last) / 1000) * 60, ease = r => 1 - Math.pow(1 - r, step);
-      last = now;
-      if (rotT !== null) {
-        const d = Math.atan2(Math.sin(rotT - rotY), Math.cos(rotT - rotY));
-        rotY += d * ease(0.12);
-        if (Math.abs(d) < 0.002) rotT = null;
-      } else if (!ptrs.size) {
-        rotY += vel; vel *= 0.93;
-        if (!selected && zoomT < 1.05 && now - lastInput > 3000 && Math.abs(vel) < 0.001) rotY += 0.0035 * step;
+      if (target !== null) {
+        let d = target - rotY;
+        d = Math.atan2(Math.sin(d), Math.cos(d));
+        rotY += d * 0.12;
+        if (Math.abs(d) < 0.002) target = null;
+      } else if (!dragging) {
+        rotY += vel; vel *= 0.94;
+        if (!selected && zoomT < 1.05 && now - lastInput > 2500 && Math.abs(vel) < 0.001) rotY += 0.0045;
       }
-      zoom += (zoomT - zoom) * ease(0.14);
-      for (let a = 0; a < 3; a++) focus[a] += (focusT[a] - focus[a]) * ease(0.12);
-      body.rotation.y = rotY;
-      const wf = rotP(focus, rotY), dist = 4.1 / zoom;
-      camera.position.set(wf[0], wf[1] + 0.04 / zoom, wf[2] + dist);
-      camera.lookAt(wf[0], wf[1], wf[2]);
-      // 스캔: 처음 나타날 때, 그 뒤 8초마다 위에서 아래로
-      const sc = scanAt ? ((now - scanAt) / 1000) % 8 : 99;
-      mat.uniforms.uScan.value = sc < 2.2 ? 1.9 - sc / 2.2 * 2.0 : -1;
-      mat.uniforms.uTime.value = t; floorMat.uniforms.uTime.value = t;
+      root.rotation.y = rotY;
+      zoom += (zoomT - zoom) * 0.12; fy += (fyT - fy) * 0.12;
+      camera.position.set(0, fy + 0.1 / zoom, 4.4 / zoom);
+      camera.lookAt(0, fy, 0);
+      ring2.rotation.z = t * 0.6;
+      const pa = pg.attributes.position;
+      for (let i = 0; i < PN; i++) { let y = pa.getY(i) + ps[i]; if (y > 1.85) y = 0; pa.setY(i, y); }
+      pa.needsUpdate = true;
+      mats.forEach(m => { m.uniforms.uTime.value = t; });
+      if (selected && muscleMats[selected]) {
+        muscleMats[selected].uniforms.uRim.value = 1.6 + Math.sin(t * 6) * 0.8;
+      }
       renderer.render(scene, camera);
-      // 선택한 근육 이름표
-      const ci = selected && M && M.centers[selected];
-      if (ci) {
-        const n = rotP(ci.n, rotY), visible = n[2] > -0.2;
-        const p = rotP(ci.c, rotY);
-        v3.set(p[0], p[1], p[2]).project(camera);
-        const r = canvas.getBoundingClientRect();
-        tag.style.transform = `translate(${((v3.x + 1) / 2 * r.width).toFixed(1)}px, ${((1 - v3.y) / 2 * r.height).toFixed(1)}px)`;
-        tag.style.opacity = visible ? '1' : '0';
-      }
-      requestAnimationFrame(frame);
+      raf = requestAnimationFrame(frame);
     }
 
     const api = {
       canvas,
       attach(slot) {
         slot.appendChild(canvas);
-        slot.appendChild(tag);
-        if (!M) slot.appendChild(loading);
         wrap = slot;
         resize();
-        if (!running) { running = true; requestAnimationFrame(frame); }
+        if (!running) { running = true; raf = requestAnimationFrame(frame); }
       },
-      setValues(v) { values = v || {}; paint(); },
-      select(k, o = {}) {
-        const { focus: go = true, label = '' } = o;
-        if (!M) { pending = { k, o }; return; }
-        selected = k && M.centers[k] ? k : null;
-        mat.uniforms.uSel.value = selected ? SUB_KEYS.indexOf(selected) + 1 : 0;
-        mat.uniforms.uFocus.value = selected ? 0.85 : 0;
-        tag.innerHTML = label;
-        tag.style.display = selected && label ? '' : 'none';
-        if (selected && go) {
-          const ci = M.centers[selected];
-          focusT.splice(0, 3, ...ci.c);
-          // 근육 법선에 몸 바깥쪽 방향을 섞어서, 팔 안쪽 근육도 몸통에 가리지 않게 본다
-          const ol = Math.hypot(ci.c[0], ci.c[2]) || 1;
-          const dx = ci.n[0] + 0.9 * ci.c[0] / ol, dz = ci.n[2] + 0.9 * ci.c[2] / ol;
-          rotT = Math.atan2(-dx, dz);
-          setZoom(Math.max(1.8, Math.min(3, 0.6 / (ci.size + 0.1))));
+      // 세부 근육 값을 받으면 부위별로 가장 낮은 값으로 칠한다
+      setValues(v) {
+        subVals = v || {}; values = {};
+        Object.entries(subVals).forEach(([k, x]) => {
+          const g = SUBS[k] ? SUBS[k].group : k;
+          values[g] = Math.min(values[g] ?? 100, x);
+        });
+        paint();
+      },
+      select(k, { focus = true } = {}) {
+        if (selected && muscleMats[selected]) muscleMats[selected].uniforms.uRim.value = 1.3;
+        selected = k ? (SUBS[k] ? SUBS[k].group : k) : null;
+        if (selected && focus && groupY[selected]) {
+          const ys = groupY[selected];
+          fyT = ys.reduce((a, b) => a + b, 0) / ys.length;
+          setZoom(2.2);
+          target = BACK.includes(selected) ? Math.PI : 0;
         }
       },
-      face(side) { rotT = side === 'back' ? Math.PI : 0; lastInput = performance.now(); },
       zoomBy(f) { setZoom(zoomT * f); },
-      reset() { setZoom(1); focusT.splice(0, 3, ...HOME); },
+      reset() { setZoom(1); fyT = 0.9; },
       zoomed: () => zoomT > 1.05,
+      face(side) { target = side === 'back' ? Math.PI : 0; lastInput = performance.now(); },
       resize,
     };
     window.addEventListener('resize', () => { if (running) resize(); });
@@ -336,8 +305,6 @@ const Body3D = (() => {
 
   return {
     color: p => rgbHex(recColor(p)),
-    keys: SUB_KEYS,
-    preload: loadMesh,
     // slot에 모형을 붙인다. WebGL이 안 되면 null
     mount(slot, opts = {}) {
       if (!window.THREE) return null;
@@ -347,5 +314,6 @@ const Body3D = (() => {
       return inst;
     },
     get() { return inst; },
+    preload() {},
   };
 })();
