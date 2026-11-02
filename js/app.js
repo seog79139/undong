@@ -534,8 +534,17 @@ setInterval(() => {
   if (today() !== lastDay) { if (ui.dietDate === lastDay) ui.dietDate = today(); lastDay = today(); ui.dayPick = null; if (!$('#sheetback')) render(); }
 }, 60000);
 
+// 새 버전이 올라오면 받아서 바로 바꾼다 (운동 중이면 다음에 열 때)
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  const hadSW = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadSW || reloaded || S.active) return;
+    reloaded = true; location.reload();
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => {});
 }
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 

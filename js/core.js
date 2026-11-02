@@ -37,6 +37,7 @@ function fmtWhen(ms) {
 }
 
 /* ================= 저장 ================= */
+const APP_VERSION = '6';
 const KEY = 'undong.v1';
 const DEFAULT = {
   v: 2, profile: null,

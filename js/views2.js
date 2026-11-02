@@ -350,7 +350,8 @@ function settingsSheet() {
     </div>
     <h3 class="h3" style="margin-top:24px">아이폰에 설치</h3>
     <ol class="steps" style="font-size:15px"><li>사파리에서 이 페이지를 열어요</li><li>아래쪽 공유 버튼을 눌러요</li><li>"홈 화면에 추가"를 눌러요</li></ol>
-    <button class="btn btn-danger" data-act="reset">모든 기록 지우기</button>`;
+    <button class="btn btn-danger" data-act="reset">모든 기록 지우기</button>
+    <p class="faint mini" style="text-align:center;margin-top:16px">버전 ${APP_VERSION}</p>`;
 }
 
 function openSummary(w) {
