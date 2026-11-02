@@ -206,7 +206,7 @@ function viewToday() {
   return `
     <div class="top"><span class="top-date">${fmtDate(t)}</span>
       <div class="row" style="gap:2px"><button class="icon-btn" data-act="guide-hub" aria-label="헬스장 지도와 가이드">${icon('map')}</button><button class="icon-btn" data-act="settings" aria-label="설정">${icon('sliders')}</button></div></div>
-    <div class="coach"><div class="coach-av">${icon('flame', 18)}</div><div><b>${esc(coach.t)}</b><p>${esc(coach.s)}</p></div></div>
+    <div class="coach"><b>${esc(coach.t)}</b><p>${esc(coach.s)}</p></div>
     ${main}
     <div class="card week-card">
       <div class="between"><span class="card-label" style="margin:0">이번 주</span><span class="num wk-n">${weekCount}<span> / ${goal}</span></span></div>
@@ -248,7 +248,7 @@ function renderWorkout() {
       <button class="wo-finish" data-act="wo-finish">완료</button>
     </div>
     <div class="wo-progress"><i style="width:${done / total * 100}%"></i></div>
-    ${a.say ? `<div class="coach-say">${icon('flame', 18)}<span>${esc(a.say)}</span></div>` : ''}
+    ${a.say ? `<div class="coach-say"><span>${esc(a.say)}</span></div>` : ''}
     ${a.items.map(exCard).join('')}
     ${cardioCard()}
     <div class="btns">

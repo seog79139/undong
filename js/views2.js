@@ -40,7 +40,7 @@ function viewDiet() {
         ${tg.adjust ? `<span class="tag warn">체중 추세로 ${tg.adjust > 0 ? '+' : ''}${tg.adjust}kcal 보정</span>` : ''}
       </div>
     </div>
-    ${msg ? `<div class="coach-say">${icon('flame', 18)}<span>${esc(msg)}</span></div>` : ''}
+    ${msg ? `<div class="coach-say"><span>${esc(msg)}</span></div>` : ''}
     ${plan ? `<div class="section-title"><span>추천 식단</span><button class="link row" style="gap:4px" data-act="diet-shuffle">${icon('refresh', 15)}다른 메뉴</button></div>
     <div class="plan-card">
       <div class="plan-total"><span class="num"><b>${fmtNum(plan.total.kcal)}</b>kcal</span><span class="pc p num">단 ${plan.total.p}g</span><span class="pc c num">탄 ${plan.total.c}g</span><span class="pc f num">지 ${plan.total.f}g</span></div>

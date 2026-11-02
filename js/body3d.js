@@ -189,13 +189,27 @@ const Body3D = (() => {
       return subs.sort((a, b) => (subVals[a] ?? 100) - (subVals[b] ?? 100))[0] || null;
     };
 
+    // 회복 색을 기억해 두고, 매 프레임 선택 상태에 맞춰 섞는다
+    const look = {}, RED = new THREE.Color('#FF2A2A');
+    let dim = 0;
     function paint() {
+      Object.keys(muscleMats).forEach(k => {
+        const v = values[k] === undefined ? 100 : values[k], fatigue = 1 - v / 100;
+        const o = look[k] || (look[k] = { s: 0, col: new THREE.Color() });
+        o.col.set(rgbHex(recColor(v)));
+        o.base = 0.18 + fatigue * 0.55;
+        o.alpha = 0.6 + fatigue * 0.4;
+      });
+      applyLook();
+    }
+    // 선택한 근육은 빨갛게 물들고, 나머지는 흐려진다
+    function applyLook() {
       Object.entries(muscleMats).forEach(([k, mat]) => {
-        const v = values[k] === undefined ? 100 : values[k];
-        mat.uniforms.uColor.value.set(rgbHex(recColor(v)));
-        const fatigue = 1 - v / 100;
-        mat.uniforms.uBase.value = 0.18 + fatigue * 0.55;
-        mat.uniforms.uAlpha.value = 0.6 + fatigue * 0.4;
+        const o = look[k]; if (!o) return;
+        const u = mat.uniforms;
+        u.uColor.value.copy(o.col).lerp(RED, o.s);
+        u.uBase.value = o.base + (0.95 - o.base) * o.s;
+        u.uAlpha.value = (o.alpha + (1 - o.alpha) * o.s) * (1 - 0.6 * dim * (1 - o.s));
       });
     }
 
@@ -258,8 +272,14 @@ const Body3D = (() => {
       for (let i = 0; i < PN; i++) { let y = pa.getY(i) + ps[i]; if (y > 1.85) y = 0; pa.setY(i, y); }
       pa.needsUpdate = true;
       mats.forEach(m => { m.uniforms.uTime.value = t; });
+      // 선택 색 전환 (약 0.3초)
+      const fade = 1 - Math.pow(0.86, Math.min(15, (now - (frame.last || now)) / 16.7));
+      frame.last = now;
+      dim += ((selected ? 1 : 0) - dim) * fade;
+      Object.keys(look).forEach(k => { look[k].s += ((k === selected ? 1 : 0) - look[k].s) * fade; });
+      applyLook();
       if (selected && muscleMats[selected]) {
-        muscleMats[selected].uniforms.uRim.value = 1.6 + Math.sin(t * 6) * 0.8;
+        muscleMats[selected].uniforms.uRim.value = 1.5 + Math.sin(t * 3) * 0.35;
       }
       renderer.render(scene, camera);
       raf = requestAnimationFrame(frame);

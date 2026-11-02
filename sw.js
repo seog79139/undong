@@ -1,6 +1,6 @@
 // 오프라인 캐시. 파일을 고치면 VERSION을 올린다.
 // 인터넷이 되면 항상 새 파일을 받고(네트워크 먼저), 안 되면 저장본을 쓴다.
-const VERSION = 'undong-v6';
+const VERSION = 'undong-v7';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/vendor/three.min.js', 'js/data-gym.js', 'js/data-exercises.js', 'js/anatomy.js', 'js/data-foods.js', 'js/data-diet.js', 'js/data-lines.js',

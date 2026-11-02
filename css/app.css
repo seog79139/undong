@@ -838,3 +838,102 @@ button.li:active, .li.tap:active { background: var(--surface-2); }
 .rs.on { background: var(--text) !important; color: var(--bg); }
 .rs.on b { color: var(--bg); }
 .weak-ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
+
+/* =========================================================
+   v6: 세련된 톤 — 따뜻한 무채색, 얇은 선, 절제된 굵기, 포인트 색은 꼭 필요한 곳만
+   ========================================================= */
+:root {
+  --bg: #F2F1EE;
+  --surface: #FFFFFF;
+  --surface-2: #EEEDEA;
+  --surface-3: #E3E2DE;
+  --line: #E6E5E1;
+  --text: #171614;
+  --text-2: #5F5D58;
+  --text-3: #9C9A94;
+  --accent: #EE5A24;
+  --accent-press: #D84E1C;
+  --accent-soft: #FCE9E1;
+  --hero: #1A1917;
+  --hero-2: #272623;
+  --shadow: 0 1px 0 rgba(0,0,0,.02), 0 0 0 1px var(--line);
+  --radius: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0B0B0A;
+    --surface: #151514;
+    --surface-2: #1E1E1C;
+    --surface-3: #292927;
+    --line: #242422;
+    --text: #F1F0EC;
+    --text-2: #A3A19B;
+    --text-3: #6B6A65;
+    --accent: #FF6B3A;
+    --accent-press: #FF8257;
+    --accent-soft: #33190F;
+    --hero: #171716;
+    --hero-2: #232321;
+    --shadow: 0 0 0 1px var(--line);
+  }
+}
+
+body { letter-spacing: -0.015em; }
+.view { padding-left: 18px; padding-right: 18px; }
+
+/* 글씨: 굵기를 한 단계씩 낮추고 위계는 크기로 */
+.title { font-size: 30px; font-weight: 700; letter-spacing: -0.04em; }
+.top-date { font-size: 13px; font-weight: 600; color: var(--text-3); letter-spacing: 0; }
+.section-title { font-size: 17px; font-weight: 700; letter-spacing: -0.025em; margin: 32px 2px 12px; }
+.section-title .faint, .section-title .mini { font-weight: 500; }
+.big { font-weight: 700; letter-spacing: -0.04em; }
+.card-label { font-size: 13px; font-weight: 600; color: var(--text-3); letter-spacing: 0; }
+.card-label .go { opacity: .7; }
+
+/* 오늘의 한 줄: 아바타 없이 글로만 */
+.coach { display: block; margin: 4px 2px 22px; }
+.coach b { font-size: 25px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.28; }
+.coach p { margin-top: 6px; font-size: 15px; line-height: 1.5; color: var(--text-2); }
+.coach-say { background: var(--surface); color: var(--text); font-weight: 500; font-size: 15px; line-height: 1.5;
+  box-shadow: var(--shadow); border-radius: 14px; padding: 13px 16px 13px 18px; position: relative; overflow: hidden; }
+.coach-say::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+
+/* 카드: 그림자 대신 얇은 선 */
+.card, .list, .ex-card, .rec-sel, .how, .plan-card, .meal { box-shadow: var(--shadow); }
+.card { padding: 18px; }
+.card.tap:active { transform: scale(.99); }
+
+/* 오늘 탭 간격 */
+.week-card { margin-bottom: 14px; }
+.grid2 { gap: 12px; margin-bottom: 14px; }
+.tile { min-height: 138px; padding: 18px; }
+.tile-val b { font-size: 30px; font-weight: 700; letter-spacing: -0.045em; }
+.tile-val small { font-weight: 600; }
+.tile-bar { height: 4px; }
+.tile-sub b { font-weight: 700; }
+.weight-strip { margin-top: 0; padding: 18px; }
+
+/* 메인 카드 */
+.hero-card { border-radius: 22px; padding: 20px 20px 16px; }
+.hc-day { font-size: 38px; font-weight: 700; letter-spacing: -0.05em; }
+.hc-muscles span { font-weight: 600; }
+.wd.done i { background: var(--text); color: var(--bg); }
+.week-card .wk-n { font-weight: 700; }
+
+/* 버튼·탭 */
+.btn { font-weight: 600; border-radius: 15px; letter-spacing: -0.01em; }
+.btn-sm { border-radius: 11px; }
+.tag { font-weight: 600; border-radius: 6px; }
+.seg { border-radius: 11px; }
+.seg button { font-weight: 600; }
+.seg button.on { box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0,0,0,.06); }
+.tabbar { padding-top: 4px; }
+.tab { font-size: 10.5px; font-weight: 600; gap: 4px; }
+.tab.on { color: var(--text); }
+.tab.on .ic { stroke-width: 2.3; }
+
+/* 숫자 강조 굵기 정리 */
+.rec-v, .band-v, .rec-big b, .ring-c b, .mring > span b, .stats3 b, .facts b, .prin-big { font-weight: 700; }
+.rec-big b { letter-spacing: -0.045em; }
+.li-title { font-weight: 600; }
+.rec-name { font-weight: 600; }
