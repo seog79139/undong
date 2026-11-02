@@ -541,3 +541,5 @@ const [hashTab, hashSel] = location.hash.slice(1).split('/');
 if (TABS.some(t => t[0] === hashTab)) { ui.tab = hashTab; if (hashSel && SUBS[hashSel]) ui.recSel = hashSel; }
 render();
 if (S.active && ui.wo) keepAwake();
+// 3D 모형은 뒤에서 미리 만들어 둔다 (회복 탭을 바로 열 수 있게)
+setTimeout(() => { if (window.THREE) Body3D.preload(); }, 1200);
