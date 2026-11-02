@@ -47,6 +47,7 @@ const ICON_PATHS = {
   refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
   list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   chart: '<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/>',
+  body2: '<circle cx="12" cy="4.5" r="2.5"/><path d="M12 8v7M8 22l4-7 4 7M6 11h12"/>',
   trophy: '<path d="M6 9H4a2 2 0 0 1 0-4h2M18 9h2a2 2 0 0 0 0-4h-2M6 3h12v7a6 6 0 0 1-12 0zM9 21h6M12 16v5"/>',
 };
 

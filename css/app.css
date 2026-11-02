@@ -781,3 +781,60 @@ button.li:active, .li.tap:active { background: var(--surface-2); }
 @media (min-width: 560px) {
   .view { padding-top: 24px; }
 }
+
+/* ---------- v3: 오늘 타일 ---------- */
+.tile { display: flex; flex-direction: column; gap: 8px; min-height: 132px; }
+.tile .card-label { margin-bottom: 0; }
+.tile-val { display: flex; align-items: baseline; gap: 3px; white-space: nowrap; min-width: 0; }
+.tile-val b { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; }
+.tile-val small { font-size: 13px; font-weight: 700; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; }
+.tile-bar { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.tile-bar i { display: block; height: 100%; border-radius: 99px; transition: width .5s; }
+.tile-sub { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; margin-top: auto; font-size: 12px; font-weight: 600; color: var(--text-3); }
+.tile-sub b { font-size: 14px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile-sub b small { font-size: 12px; color: var(--text-3); font-weight: 600; }
+
+/* ---------- v3: 3D 확대 ---------- */
+.holo-slot { height: 440px; overflow: hidden; }
+.holo-zoom { position: absolute; z-index: 3; right: 12px; top: 230px; display: grid; gap: 6px; }
+.holo-zoom button { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #CFF4FF; background: rgba(12,40,54,.72); border: 1px solid rgba(54,200,255,.28); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.holo-zoom button:active { background: rgba(54,200,255,.3); }
+.holo-tag { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; transition: opacity .2s; white-space: nowrap;
+  margin: -46px 0 0 -10px; padding: 6px 10px; border-radius: 10px; background: rgba(6,18,26,.82); border: 1px solid rgba(255,255,255,.18); color: #fff; font-size: 13px; display: flex; gap: 6px; align-items: baseline; }
+.holo-tag b { font-weight: 800; }
+.holo-tag span { font-weight: 800; color: #9BE8FF; }
+.holo-tag::after { content: ''; position: absolute; left: 10px; bottom: -5px; width: 8px; height: 8px; background: inherit; border: inherit; border-top: 0; border-left: 0; transform: rotate(45deg); }
+
+/* ---------- v3: 근육 상세 ---------- */
+.rec-role { margin: 8px 0 12px; font-size: 15px; line-height: 1.5; color: var(--text-2); word-break: keep-all; }
+.rec-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.rec-stats div { background: var(--surface-2); border-radius: 14px; padding: 10px 12px; }
+.rec-stats span { display: block; font-size: 12px; font-weight: 600; color: var(--text-3); }
+.rec-stats b { font-size: 15px; font-weight: 800; }
+.rec-stats b.low { color: var(--text-3); } .rec-stats b.ok { color: var(--r-ok); } .rec-stats b.high { color: var(--r-low); }
+.rec-h { margin: 18px 0 8px; font-size: 15px; font-weight: 800; }
+.rec-tips { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.rec-tips li { position: relative; padding-left: 16px; font-size: 14px; line-height: 1.55; word-break: keep-all; }
+.rec-tips li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.rec-ex { display: grid; gap: 6px; }
+.rx { display: grid; grid-template-columns: 1fr 72px; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); text-align: left; }
+.rx:active { background: var(--surface-3); }
+.rx-n { font-size: 14px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx-n em { font-style: normal; font-size: 11px; font-weight: 800; color: var(--accent); margin-left: 6px; }
+.rx-bar { height: 6px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.rx-bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.rec-close { width: 100%; margin-top: 14px; }
+
+/* 근육별 목록 */
+.rec-g { border-top: 1px solid var(--line); padding: 10px 14px; }
+.rec-g:first-child { border-top: 0; }
+.rec-g.sel { background: var(--surface-2); }
+.rec-g .rec-li { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 2px 0; }
+.rec-subs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px 20px; }
+.rs { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 99px; background: var(--surface-2); font-size: 12px; font-weight: 700; color: var(--text-2); }
+.rec-g.sel .rs { background: var(--surface); }
+.rs i { width: 7px; height: 7px; border-radius: 50%; }
+.rs b { font-weight: 800; color: var(--text); }
+.rs.on { background: var(--text) !important; color: var(--bg); }
+.rs.on b { color: var(--bg); }
+.weak-ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }

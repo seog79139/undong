@@ -51,5 +51,5 @@ const DIET_RULES = [
   { icon: 'protein', title: '단백질 4번 나눠 먹기', body: '한 끼에 몸무게 × 0.4g씩, 3~4시간 간격' },
   { icon: 'scale', title: '살짝 적게 먹기', body: '유지 칼로리보다 10% 적게. 근육은 지키고 지방만 빼기' },
   { icon: 'bolt', title: '탄수화물은 운동 앞뒤로', body: '운동하는 날 탄수화물을 더, 쉬는 날은 덜' },
-  { icon: 'moon', title: '잠 7시간 이상', body: '잠이 부족하면 빠지는 게 지방이 아니라 근육' },
+  { icon: 'moon', title: '잠 7시간 이상', body: '잠이 부족하면 지방이 아니라 근육이 빠져요' },
 ];

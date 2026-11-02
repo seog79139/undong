@@ -47,28 +47,28 @@ function viewOnboarding() {
     return `<div class="ob"><div class="ob-body">
       <div class="brand">운동<i>.</i></div>
       <h1>짐박스 건대입구점<br>전용 트레이너</h1>
-      <p class="lead">루틴은 그 헬스장 기구로 짜고, 무게는 알아서 올리고, 근육 회복은 3D로 보여줄게.</p>
+      <p class="lead">이 헬스장 기구로 루틴을 짜고, 무게는 기록에 맞춰 올려 드려요. 근육 회복은 3D로 보여 드릴게요.</p>
     </div><button class="btn btn-primary" data-act="ob-next">시작</button></div>`;
   }
   const top = `<div class="ob-top"><button class="icon-btn" data-act="ob-back" aria-label="뒤로">${icon('left')}</button><div class="ob-prog"><i style="width:${o.step / 4 * 100}%"></i></div></div>`;
   let body = '';
   if (o.step === 1) {
-    body = `<h1>성별</h1><p class="lead">칼로리 계산에만 써.</p>
+    body = `<h1>성별</h1><p class="lead">칼로리 계산에만 사용해요.</p>
       <div class="ob-choices">
         <button class="ob-choice ${o.sex === 'm' ? 'on' : ''}" data-act="ob-sex" data-v="m">남성</button>
         <button class="ob-choice ${o.sex === 'f' ? 'on' : ''}" data-act="ob-sex" data-v="f">여성</button>
       </div>`;
   } else if (o.step === 2) {
-    body = `<h1>몇 년생?</h1><p class="lead">기초대사량 계산용.</p>
+    body = `<h1>몇 년생이세요?</h1><p class="lead">기초대사량을 계산할 때 써요.</p>
       <div class="field"><div class="input-wrap"><input class="input num" inputmode="numeric" maxlength="4" placeholder="2007" value="${esc(o.birthYear)}" data-in="ob" data-k="birthYear"><span class="unit">년생</span></div></div>`;
   } else if (o.step === 3) {
-    body = `<h1>지금 몸</h1><p class="lead">체지방률은 모르면 비워둬.</p>
+    body = `<h1>지금 몸 상태</h1><p class="lead">체지방률은 모르면 비워 두셔도 돼요.</p>
       <div class="field"><label>키</label><div class="input-wrap"><input class="input num" inputmode="decimal" placeholder="175" value="${esc(o.height)}" data-in="ob" data-k="height"><span class="unit">cm</span></div></div>
       <div class="field"><label>몸무게</label><div class="input-wrap"><input class="input num" inputmode="decimal" placeholder="70" value="${esc(o.weight)}" data-in="ob" data-k="weight"><span class="unit">kg</span></div></div>
       <div class="field"><label>체지방률 (선택)</label><div class="input-wrap"><input class="input num" inputmode="decimal" placeholder="인바디 결과" value="${esc(o.fat)}" data-in="ob" data-k="fat"><span class="unit">%</span></div></div>`;
   } else {
     const t = targetsFor({ sex: o.sex, birthYear: num(o.birthYear), height: num(o.height) }, num(o.weight));
-    body = `<h1>세팅 끝</h1><p class="lead">하루 목표랑 루틴이야. 나중에 설정에서 바꿀 수 있어.</p>
+    body = `<h1>준비됐어요</h1><p class="lead">하루 목표와 추천 루틴이에요. 나중에 설정에서 바꿀 수 있어요.</p>
       <div class="macro-tiles">
         <div class="mt k"><span>칼로리</span><b class="num">${fmtNum(t.kcal)}</b><small>kcal</small></div>
         <div class="mt p"><span>단백질</span><b class="num">${t.protein}</b><small>g</small></div>
@@ -104,35 +104,35 @@ function itemSummary(it) {
 
 function coachLine(day, plan) {
   const t = today(), g = gapDays(), name = DAY_NAME[day];
-  if (!S.workouts.length) return { t: '첫 운동 가보자', s: '오늘은 무게보다 기구 익히는 날. 전부 가볍게.' };
+  if (!S.workouts.length) return { t: '첫 운동을 시작해 볼까요', s: '오늘은 무게보다 기구에 익숙해지는 날이에요. 모두 가볍게 하세요.' };
   const todays = S.workouts.filter(w => w.date === t);
   if (todays.length && !ui.dayPick) {
     const tg = targets(), food = sumFood(S.meals[t] || []);
     const left = tg.protein - food.p;
     const st = todays.reduce((n, w) => n + wStats(w).sets, 0);
-    return { t: `오늘 ${st}세트 끝`, s: left > 10 ? `단백질 ${left}g 남았어. 그것만 채우자.` : '단백질까지 채웠네. 오늘은 일찍 자.' };
+    return { t: `오늘 ${st}세트 완료`, s: left > 10 ? `단백질이 ${left}g 남았어요. 이것만 채우면 돼요.` : '단백질까지 다 채웠어요. 오늘은 일찍 주무세요.' };
   }
   const rec = recoveryAll(), rd = readiness(day, rec);
-  if (g >= 3) return { t: `${g}일 쉬었네`, s: `회복은 진작 끝났어. 오늘 ${name} 가자.` };
+  if (g >= 3) return { t: `${g}일 쉬었어요`, s: `회복은 이미 끝났어요. 오늘은 ${name} 루틴을 하는 날이에요.` };
   if (rd < 60) {
     const keys = prog().days.map(d => d.key).filter(k => k !== day);
     const best = keys.map(k => [k, readiness(k, rec)]).sort((a, b) => b[1] - a[1])[0];
-    if (best && best[1] >= 80) return { t: `${name}은 아직 덜 풀렸어`, s: `회복 ${rd}%. 오늘은 ${DAY_NAME[best[0]]} 먼저 하는 게 나아.`, swap: best[0] };
-    return { t: '오늘은 쉬어가자', s: `전신 회복 ${bodyReadiness(rec)}%. 유산소 30분만 해도 충분해.` };
+    if (best && best[1] >= 80) return { t: `${name} 근육이 아직 덜 풀렸어요`, s: `회복 ${rd}%예요. 오늘은 ${DAY_NAME[best[0]]} 루틴을 먼저 하는 게 좋아요.`, swap: best[0] };
+    return { t: '오늘은 쉬어 가세요', s: `전신 회복 ${bodyReadiness(rec)}%예요. 유산소 30분만 해도 충분해요.` };
   }
   const up = plan.find(it => it.note === 'up' && weightBased(ex(it.exId)));
   if (up) {
     const e = ex(up.exId), w = up.sets.filter(isMain)[0].w;
-    return { t: `오늘 ${name}`, s: `${e.name} ${fmtW(w, e)} 도전. 지난번에 다 채웠잖아.` };
+    return { t: `오늘은 ${name}`, s: `${e.name} ${fmtW(w, e)}에 도전해 보세요. 지난번에 목표 횟수를 다 채웠어요.` };
   }
-  if (g === 2) return { t: '이틀 쉬었다', s: `오늘은 무조건 ${name}.` };
+  if (g === 2) return { t: '이틀 쉬었어요', s: `오늘은 꼭 ${name} 루틴을 해 주세요.` };
   const first = plan.find(it => it.note === 'keep');
   if (first) {
     const e = ex(first.exId), prev = lastItemFor(first.exId);
     const ps = prev ? prev.sets.filter(isMain) : [];
-    if (ps.length) return { t: `오늘 ${name}`, s: `${e.name} 지난번 ${fmtSet(ps[0], e)}. 오늘 한 개만 더.` };
+    if (ps.length) return { t: `오늘은 ${name}`, s: `${e.name} 지난번 기록은 ${fmtSet(ps[0], e)}예요. 오늘은 한 개만 더 해 보세요.` };
   }
-  return { t: `오늘 ${name}`, s: `회복 ${rd}%. 컨디션 좋을 때 무게 올리자.` };
+  return { t: `오늘은 ${name}`, s: `회복 ${rd}%예요. 컨디션이 좋을 때 무게를 올려 보세요.` };
 }
 
 function viewToday() {
@@ -149,7 +149,7 @@ function viewToday() {
     const a = S.active;
     const done = a.items.reduce((n, i) => n + i.sets.filter(s => s.done).length, 0);
     const total = a.items.reduce((n, i) => n + i.sets.length, 0);
-    coach = { t: '운동 중이야', s: '마저 끝내고 오자.' };
+    coach = { t: '운동 중이에요', s: '이어서 마무리해 주세요.' };
     main = `<div class="hero-card">
       <div class="hc-top"><span class="row"><span class="live-dot"></span>진행 중</span><span class="num" data-elapsed>${fmtElapsed(Date.now() - a.startedAt)}</span></div>
       <div class="hc-day">${DAY_NAME[a.day] || '운동'}</div>
@@ -199,8 +199,9 @@ function viewToday() {
   const tg = targets(), food = sumFood(S.meals[t] || []);
   const lw = latestWeight(), rate = weeklyRate();
   const br = bodyReadiness(rec);
-  const tired = Object.entries(rec).sort((a, b) => a[1] - b[1])[0];
+  const tired = Object.entries(recoverySubs()).sort((a, b) => a[1] - b[1])[0];
   const goal = p.days.length;
+  const kcalPct = Math.round(food.kcal / tg.kcal * 100), over = food.kcal > tg.kcal;
 
   return `
     <div class="top"><span class="top-date">${fmtDate(t)}</span>
@@ -214,18 +215,20 @@ function viewToday() {
     <div class="grid2">
       <button class="card tap tile" data-act="tab" data-k="recovery">
         <div class="card-label"><span>회복</span><span class="go">${icon('right', 16)}</span></div>
-        <div class="tile-ring">${ring(br / 100, { size: 64, stroke: 7, color: Body3D.color(br), label: `<b class="num">${br}</b>%` })}
-          <div class="tile-side"><small>제일 지친 곳</small><b>${tired[1] < 100 ? MUSCLES[tired[0]] : '없음'}</b></div></div>
+        <div class="tile-val"><b class="num">${br}</b><small>%</small></div>
+        <div class="tile-bar"><i style="width:${br}%;background:${Body3D.color(br)}"></i></div>
+        <div class="tile-sub"><span>가장 지친 곳</span><b>${tired && tired[1] < 100 ? SUBS[tired[0]].name : '없어요'}</b></div>
       </button>
       <button class="card tap tile" data-act="tab" data-k="diet">
-        <div class="card-label"><span>식단</span><span class="go">${icon('right', 16)}</span></div>
-        <div class="tile-ring">${ring(food.kcal / tg.kcal, { size: 64, stroke: 7, color: food.kcal > tg.kcal ? 'var(--bad)' : 'var(--accent)', label: `<b class="num">${Math.round(food.kcal / tg.kcal * 100)}</b>%` })}
-          <div class="tile-side"><small>단백질</small><b class="num">${food.p}<span>/${tg.protein}g</span></b></div></div>
+        <div class="card-label"><span>식단 <small class="faint">kcal</small></span><span class="go">${icon('right', 16)}</span></div>
+        <div class="tile-val"><b class="num">${fmtNum(food.kcal)}</b><small>/ ${fmtNum(tg.kcal)}</small></div>
+        <div class="tile-bar"><i style="width:${clamp(kcalPct, 0, 100)}%;background:${over ? 'var(--bad)' : 'var(--accent)'}"></i></div>
+        <div class="tile-sub"><span>단백질</span><b class="num">${food.p}<small> / ${tg.protein}g</small></b></div>
       </button>
     </div>
     <button class="card tap weight-strip" data-act="tab" data-k="body">
       <span class="ws-l">${icon('scale', 20)}<span><small>체중</small><b class="num">${lw ? fmtNum(lw) : '–'}<span>kg</span></b></span></span>
-      <span class="ws-r">${rate === null ? '<small>아침마다 재서 기록</small>' : `<b class="num ${rate <= 0 && rate >= -0.75 ? 'good' : 'warn'}">${rate > 0 ? '+' : ''}${fmtNum(rate)}%</b><small>지난주 대비</small>`}</span>
+      <span class="ws-r">${rate === null ? '<small>아침마다 재서 기록해 주세요</small>' : `<b class="num ${rate <= 0 && rate >= -0.75 ? 'good' : 'warn'}">${rate > 0 ? '+' : ''}${fmtNum(rate)}%</b><small>지난주 대비</small>`}</span>
     </button>`;
 }
 
@@ -328,11 +331,11 @@ function cardioCard() {
   return `<div class="ex-card ${c.done ? 'complete' : ''}">
     <div class="ex-head"><span class="ex-idx">${icon('heart', 15)}</span><div class="ex-meta"><div class="ex-name">유산소</div><div class="ex-chips"><button class="zb-btn" data-act="zone-key" data-k="cardio">${zoneBadge('cardio')}</button></div></div></div>
     <div class="cardio-types">${CARDIO.filter(x => !x.hidden).map(x => `<button class="opt ${x.key === c.type ? 'on' : ''}" data-act="cardio-type" data-k="${x.key}"><b>${x.name}</b><small>${MACHINES[x.m].brand}</small></button>`).join('')}</div>
-    <div class="hr-zone">${icon('heart', 18)}<div><b class="num">${lo}–${hi}</b><span>목표 심박 (말은 되는데 노래는 안 되는 정도)</span></div></div>
+    <div class="hr-zone">${icon('heart', 18)}<div><b class="num">${lo}–${hi}</b><span>목표 심박 · 말은 되지만 노래는 힘든 정도</span></div></div>
     <div class="ex-cue">${icon('target', 15)}<span>${esc(type.tip)}</span></div>
     <div class="stepper"><button data-act="cardio-min" data-d="-5" aria-label="5분 줄이기">${icon('minus')}</button><span class="sv num">${c.min}<small>분</small></span><button data-act="cardio-min" data-d="5" aria-label="5분 늘리기">${icon('plus')}</button></div>
     <div class="set-grid set-row ${c.done ? 'done' : ''}" style="grid-template-columns:1fr 44px;margin-top:8px">
-      <span class="cardio-l">${c.done ? '유산소 완료' : '다 했으면 체크'}</span>
+      <span class="cardio-l">${c.done ? '유산소 완료' : '다 하면 체크해 주세요'}</span>
       <button class="chk" data-act="cardio-done" aria-label="유산소 완료">${icon('check', 20)}</button>
     </div>
   </div>`;
@@ -359,21 +362,60 @@ function startRest(sec) {
 }
 
 /* ---------- 회복 ---------- */
-function recValues() { return recoveryAll(Date.now() + ui.recHours * HOUR); }
+const recAt = () => Date.now() + ui.recHours * HOUR;
+function recValues() { return recoverySubs(recAt()); }
+const etaShort = ms => fmtWhen(Date.now() + ms).replace('오전 ', '').replace('오후 ', '');
+const holoLabel = (k, v) => `<b>${SUBS[k].name}</b><span class="num">${v}%</span>`;
+
+// 같은 부위 안에서 유독 덜 한 세부 근육 (주간 세트 기준)
+function weakSubs(ws, wg) {
+  if (S.workouts.length < 3) return [];
+  const used = new Set(prog().days.flatMap(d => d.items));
+  return Object.keys(SUBS)
+    .filter(k => wg[SUBS[k].group] >= 6 && ws[k] < wg[SUBS[k].group] * 0.5)
+    .map(k => {
+      const best = bestExercisesFor(k, 6).find(x => !used.has(x.e.id)) || bestExercisesFor(k, 1)[0];
+      return { k, n: ws[k], gap: wg[SUBS[k].group] - ws[k], best };
+    })
+    .sort((a, b) => b.gap - a.gap).slice(0, 3);
+}
+
+function recDetail(sel, sub, ws) {
+  const d = SUBS[sel], v = sub[sel], eta = etaReady(sel);
+  const used = new Set(prog().days.flatMap(x => x.items));
+  const best = bestExercisesFor(sel, 5);
+  const n = ws[sel];
+  const st = n < 4 ? 'low' : n > 14 ? 'high' : 'ok';
+  return `<div class="rec-sel">
+    <div class="between"><div><small>${d.full} · ${MUSCLES[d.group]}</small><h3>${d.name}</h3></div>
+      <div class="rec-big ${recClass(v)}"><b class="num">${v}</b>%</div></div>
+    <p class="rec-role">${d.role}</p>
+    <div class="rec-stats">
+      <div><span>다시 훈련</span><b>${eta ? fmtWhen(Date.now() + eta) : '지금 가능'}</b></div>
+      <div><span>이번 주 자극</span><b class="num ${st}">${fmtNum(n)}세트</b></div>
+    </div>
+    ${recoveryChart(recoveryCurve(sel))}
+    <p class="faint mini">실선은 지난 7일, 점선은 앞으로 3일이에요. 초록 띠에 들어오면 다시 훈련해도 돼요.</p>
+    <h4 class="rec-h">잘 키우는 법</h4>
+    <ul class="rec-tips">${d.tips.map(t => `<li>${t}</li>`).join('')}</ul>
+    <h4 class="rec-h">잘 맞는 종목</h4>
+    <div class="rec-ex">${best.map(({ e, v: w }) => `<button class="rx" data-act="guide" data-id="${e.id}">
+      <span class="rx-n">${e.name}${used.has(e.id) ? '<em>루틴</em>' : ''}</span>
+      <span class="rx-bar"><i style="width:${Math.min(100, w * 100)}%"></i></span></button>`).join('')}</div>
+    <button class="btn btn-soft btn-sm rec-close" data-act="rec-sel" data-k="">전신 보기</button>
+  </div>`;
+}
+
 function viewRecovery() {
-  const rec = recValues(), br = bodyReadiness(rec), now = recoveryAll();
-  const sel = ui.recSel;
-  const list = Object.keys(MUSCLES).map(m => ({ m, v: rec[m], eta: etaReady(m) })).sort((a, b) => a.v - b.v);
-  const ws = weeklySets();
+  const t = recAt();
+  const sub = recoverySubs(t), grp = recoveryAll(t), now = recoverySubs();
+  const br = bodyReadiness(grp);
+  const sel = ui.recSel && SUBS[ui.recSel] ? ui.recSel : null;
+  const ws = weeklySets(Date.now(), true), wg = weeklySets();
   const hasData = S.workouts.length > 0 || S.active;
-  const hours = [[0, '지금'], [12, '+12시간'], [24, '+1일'], [48, '+2일']];
-  const selPanel = sel ? `<div class="rec-sel">
-      <div class="between"><div><small>${ui.recHours ? hours.find(h => h[0] === ui.recHours)[1] : '지금'}</small><h3>${MUSCLES[sel]}</h3></div>
-        <div class="rec-big ${recClass(rec[sel])}"><b class="num">${rec[sel]}</b>%</div></div>
-      <p class="rec-eta">${etaReady(sel) ? `${icon('timer', 15)} ${fmtWhen(Date.now() + etaReady(sel))}쯤 다시 훈련 OK` : `${icon('check', 15)} 지금 바로 훈련해도 돼`}</p>
-      ${recoveryChart(recoveryCurve(sel))}
-      <p class="faint mini">왼쪽 실선 = 지난 7일 · 점선 = 앞으로 3일 · 초록 띠 = 훈련 OK 구간</p>
-    </div>` : '';
+  const hours = [[0, '지금'], [12, '12시간 뒤'], [24, '내일'], [48, '모레']];
+  const groups = Object.keys(MUSCLES).sort((a, b) => grp[a] - grp[b]);
+  const weak = weakSubs(ws, wg);
   return header('회복', `<span class="tag">${hasData ? `운동 ${S.workouts.length}회 기준` : '기록 없음'}</span>`) + `
     <div class="holo-card">
       <div class="holo-top">
@@ -381,42 +423,67 @@ function viewRecovery() {
         <div class="holo-face"><button data-act="holo-face" data-k="front">앞</button><button data-act="holo-face" data-k="back">뒤</button></div>
       </div>
       <div id="holo-slot" class="holo-slot"></div>
-      <div class="holo-hint">${icon('swap', 14)} 스와이프해서 돌리기 · 근육 누르면 자세히</div>
+      <div class="holo-zoom">
+        <button data-act="holo-zoom" data-k="in" aria-label="확대">${icon('plus', 18)}</button>
+        <button data-act="holo-zoom" data-k="out" aria-label="축소">${icon('minus', 18)}</button>
+        <button data-act="holo-zoom" data-k="reset" aria-label="전신 보기">${icon('body2', 18)}</button>
+      </div>
+      <div class="holo-hint">근육을 누르면 확대해서 분석해 드려요</div>
       <div class="holo-legend"><span>지침</span><i></i><span>회복</span></div>
       <div class="holo-time">${hours.map(([h, l]) => `<button class="${ui.recHours === h ? 'on' : ''}" data-act="rec-hours" data-k="${h}">${l}</button>`).join('')}</div>
     </div>
-    ${selPanel}
-    ${!hasData ? '<div class="empty">운동을 기록하면 근육별 피로가 모형에 표시돼</div>' : ''}
-    <div class="section-title"><span>근육별</span><span class="faint mini">${ui.recHours ? '예상치' : '지금'}</span></div>
-    <div class="list rec-list">${list.map(({ m, v, eta }) => `<button class="li rec-li ${sel === m ? 'sel' : ''}" data-act="rec-sel" data-k="${m}">
-        <span class="rec-dot" style="background:${Body3D.color(v)}"></span>
-        <span class="rec-name">${MUSCLES[m]}</span>
-        <span class="rec-bar"><i style="width:${v}%;background:${Body3D.color(v)}"></i></span>
-        <span class="rec-v num">${v}%</span>
-        <span class="rec-eta2">${now[m] >= 90 ? '' : fmtWhen(Date.now() + eta).replace('오전 ', '').replace('오후 ', '')}</span>
-      </button>`).join('')}</div>
-    <div class="section-title"><span>이번 주 세트</span><span class="faint mini">초록 = 근성장 최적 10–20세트</span></div>
-    <div class="card">${bandBars(['chest', 'lats', 'upperBack', 'frontDelt', 'sideDelt', 'rearDelt', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'abs'].map(m => ({ label: MUSCLES[m], v: ws[m] })), { lo: WEEKLY_SETS.lo, hi: WEEKLY_SETS.hi, max: 26 })}</div>
+    ${sel ? recDetail(sel, sub, ws) : ''}
+    ${!hasData ? '<div class="empty">운동을 기록하면 근육별 피로가 모형에 표시돼요</div>' : ''}
+    ${weak.length ? `<div class="section-title"><span>보완하면 좋은 근육</span><span class="faint mini">최근 7일</span></div>
+    <div class="list weak-list">${weak.map(w => `<button class="li" data-act="rec-sel" data-k="${w.k}">
+      <span class="weak-ic">${icon('target', 18)}</span>
+      <div class="li-main"><div class="li-title">${SUBS[w.k].name} <span class="faint">${fmtNum(w.n)}세트</span></div>
+      <div class="li-sub">${MUSCLES[SUBS[w.k].group]} 운동에 비해 덜 자극됐어요${w.best ? ` · 추천 ${w.best.e.name}` : ''}</div></div>
+      <span class="chev">${icon('right', 18)}</span></button>`).join('')}</div>` : ''}
+    <div class="section-title"><span>근육별</span><span class="faint mini">${ui.recHours ? '예상치' : '지금'} · 세부 근육을 눌러 보세요</span></div>
+    <div class="list rec-list">${groups.map(g => {
+      const v = grp[g], subs = subsOfGroup(g).sort((a, b) => sub[a] - sub[b]);
+      return `<div class="rec-g ${subs.includes(sel) ? 'sel' : ''}">
+        <button class="rec-li" data-act="rec-sel" data-k="${subs[0]}">
+          <span class="rec-dot" style="background:${Body3D.color(v)}"></span>
+          <span class="rec-name">${MUSCLES[g]}</span>
+          <span class="rec-bar"><i style="width:${v}%;background:${Body3D.color(v)}"></i></span>
+          <span class="rec-v num">${v}%</span>
+          <span class="rec-eta2">${Math.min(...subs.map(s => now[s])) >= 90 ? '' : etaShort(Math.max(...subs.map(s => etaReady(s))))}</span>
+        </button>
+        ${subs.length > 1 ? `<div class="rec-subs">${subs.map(s => `<button class="rs ${sel === s ? 'on' : ''}" data-act="rec-sel" data-k="${s}"><i style="background:${Body3D.color(sub[s])}"></i>${SUBS[s].name}<b class="num">${sub[s]}</b></button>`).join('')}</div>` : ''}
+      </div>`;
+    }).join('')}</div>
+    <div class="section-title"><span>이번 주 세트</span><span class="faint mini">초록 구간이 근성장에 좋은 10–20세트예요</span></div>
+    <div class="card">${bandBars(['chest', 'lats', 'upperBack', 'frontDelt', 'sideDelt', 'rearDelt', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'abs'].map(m => ({ label: MUSCLES[m], v: wg[m] })), { lo: WEEKLY_SETS.lo, hi: WEEKLY_SETS.hi, max: 26 })}</div>
     <div class="section-title"><span>회복 계산법</span></div>
     <div class="how-grid">
-      <div class="how"><span class="how-n">1</span><b>세트마다 피로</b><div class="how-vis"><i style="height:100%"></i><i style="height:50%"></i></div><p>주동근 1 · 보조근 0.5</p></div>
-      <div class="how"><span class="how-n">2</span><b>크기별 회복</b><div class="how-vis h"><i style="width:100%"></i><i style="width:66%"></i></div><p>큰 근육 3일 · 작은 근육 2일</p></div>
-      <div class="how"><span class="how-n">3</span><b>90%면 OK</b><div class="how-vis g"><i style="width:90%"></i></div><p>초록이면 다시 훈련</p></div>
+      <div class="how"><span class="how-n">1</span><b>세트마다 피로</b><div class="how-vis"><i style="height:100%"></i><i style="height:50%"></i></div><p>주동근 1, 보조근 0.5</p></div>
+      <div class="how"><span class="how-n">2</span><b>종목별 분배</b><div class="how-vis h"><i style="width:100%"></i><i style="width:66%"></i></div><p>종목마다 세부 근육에 다르게</p></div>
+      <div class="how"><span class="how-n">3</span><b>90%면 가능</b><div class="how-vis g"><i style="width:90%"></i></div><p>초록이면 다시 훈련</p></div>
     </div>
-    <p class="faint mini" style="margin-top:10px">처음 몇 주는 근육통이 더 오래가서 회복을 25% 길게 잡아. 한계까지 간 세트는 피로를 더 줘.</p>`;
+    <p class="faint mini" style="margin-top:10px">인클라인 프레스는 윗가슴에, 오버헤드 익스텐션은 삼두 장두에 더 많이 쌓이는 식으로 종목마다 세부 근육에 피로를 나눠요. 처음 몇 주는 근육통이 오래가서 회복을 25% 길게 잡고, 한계까지 간 세트는 피로를 더 줘요.</p>`;
 }
 function mountHolo() {
   const slot = $('#holo-slot');
   if (!slot) return;
-  const inst = Body3D.mount(slot, { onSelect: m => ACT['rec-sel']({ dataset: { k: m || '' } }) });
+  const inst = Body3D.mount(slot, {
+    onSelect: m => { if (m || ui.recSel) ACT['rec-sel']({ dataset: { k: m || '' }, from3d: true }); },
+  });
   if (!inst) {
     slot.classList.add('flat');
-    slot.innerHTML = bodyMap([], [], { values: recValues() });
+    slot.innerHTML = bodyMap([], [], { values: recoveryAll(recAt()) });
     return;
   }
-  inst.setValues(recValues());
-  inst.select(ui.recSel);
+  const v = recValues();
+  inst.setValues(v);
+  // 선택이 바뀌었을 때만 카메라를 움직인다
+  const changed = ui.recSel !== holoSel;
+  holoSel = ui.recSel;
+  inst.select(ui.recSel, { focus: changed, label: ui.recSel ? holoLabel(ui.recSel, v[ui.recSel]) : '' });
+  if (changed && !ui.recSel) inst.reset();
 }
+let holoSel = null;
 
 /* ---------- 기록 ---------- */
 function viewHistory() {
@@ -463,7 +530,7 @@ function histCal() {
       <div class="cal">${WD.map(w => `<span class="wh">${w}</span>`).join('')}${cells}</div>
     </div>
     <div class="section-title"><span>${ui.histSel ? fmtDate(ui.histSel) : `${m}월 · ${monthW.length}회`}</span>${ui.histSel ? '<button class="link" data-act="hist-sel" data-k="">전체</button>' : ''}</div>
-    ${sel.length ? `<div class="list">${sel.map(sessionLi).join('')}</div>` : `<div class="empty">${ui.histSel ? '이날은 기록 없음' : '이번 달 기록 없음'}</div>`}`;
+    ${sel.length ? `<div class="list">${sel.map(sessionLi).join('')}</div>` : `<div class="empty">${ui.histSel ? '이날은 기록이 없어요' : '이번 달 기록이 없어요'}</div>`}`;
 }
 function histEx() {
   const map = {};
@@ -473,7 +540,7 @@ function histEx() {
     m.n++; m.last = w.date; i.sets.filter(isMain).forEach(s => { m.best = Math.max(m.best, score(s, e)); });
   }));
   const ids = Object.keys(map).sort((a, b) => (map[b].last < map[a].last ? -1 : 1));
-  if (!ids.length) return '<div class="empty">운동을 기록하면 종목별 성장 그래프가 여기 쌓여</div>';
+  if (!ids.length) return '<div class="empty">운동을 기록하면 종목별 성장 그래프가 여기에 쌓여요</div>';
   return `<div class="list">${ids.map(id => {
     const e = ex(id);
     return `<button class="li" data-act="ex-progress" data-id="${id}">

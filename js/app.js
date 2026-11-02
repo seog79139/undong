@@ -87,20 +87,20 @@ async function exportBackup() {
   a.href = URL.createObjectURL(file); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  toast('백업 파일 저장 완료');
+  toast('백업 파일을 저장했어요');
 }
 async function importBackup(file) {
   let obj;
-  try { obj = JSON.parse(await file.text()); } catch (e) { toast('백업 파일을 못 읽었어'); return; }
-  if (!obj || obj.app !== 'undong' || !obj.state || ![1, 2].includes(obj.state.v)) { toast('운동 앱 백업 파일이 아니야'); return; }
-  const ok = await confirmSheet({ title: '백업을 불러올까?', body: `${(obj.exportedAt || '').slice(0, 10)} 백업으로 지금 기록을 전부 덮어써. 되돌릴 수 없어.`, ok: '불러오기', danger: true });
+  try { obj = JSON.parse(await file.text()); } catch (e) { toast('백업 파일을 읽지 못했어요'); return; }
+  if (!obj || obj.app !== 'undong' || !obj.state || ![1, 2].includes(obj.state.v)) { toast('운동 앱의 백업 파일이 아니에요'); return; }
+  const ok = await confirmSheet({ title: '백업을 불러올까요?', body: `${(obj.exportedAt || '').slice(0, 10)} 백업으로 지금 기록을 모두 덮어써요. 되돌릴 수 없어요.`, ok: '불러오기', danger: true });
   if (!ok) return;
   S = hydrate(obj.state);
   save();
   try { await idb.clear(); for (const p of obj.photos || []) await idb.put(p); } catch (e) { /* 사진 복원 실패는 무시 */ }
   ui.photos = null; ui.wo = false;
   render();
-  toast('불러오기 완료');
+  toast('불러왔어요');
 }
 
 /* ================= 액션 ================= */
@@ -142,7 +142,7 @@ const ACT = {
   program() { openSheet(programSheet()); },
   'program-set'(t) {
     S.settings.program = t.dataset.k; ui.dayPick = null;
-    save(); closeSheet(); render(); toast(`${prog().name}로 바꿨어`);
+    save(); closeSheet(); render(); toast(`${prog().name} 루틴으로 바꿨어요`);
   },
   'method-session'() { openSheet(methodSheet('session')); },
   'method-item'(t) { openSheet(methodSheet('item', +t.dataset.i)); },
@@ -150,7 +150,7 @@ const ACT = {
     const k = t.dataset.k;
     if (t.dataset.scope === 'session') { S.settings.method = k; save(); closeSheet(); render(); return; }
     const i = +t.dataset.i, it = S.active.items[i];
-    if (it.sets.some(s => s.done)) { toast('이미 시작한 종목은 방식을 못 바꿔'); closeSheet(); return; }
+    if (it.sets.some(s => s.done)) { toast('이미 시작한 종목은 방식을 바꿀 수 없어요'); closeSheet(); return; }
     S.active.items[i] = buildItem(it.exId, k, { warm: it.sets.some(s => kindOf(s) === 'W') });
     save(); closeSheet(); renderWorkout();
   },
@@ -160,16 +160,16 @@ const ACT = {
     const last = {};
     S.workouts.forEach(w => { if (!last[w.day] || w.date > last[w.day]) last[w.day] = w.date; });
     const rec = recoveryAll();
-    openSheet(`${sheetHead('어떤 루틴 할래?')}
+    openSheet(`${sheetHead('어떤 루틴을 할까요?')}
       <div class="list">${prog().days.map(d => {
         const rd = readiness(d.key, rec), ago = last[d.key] ? daysBetween(last[d.key], today()) : null;
         return `<button class="li" data-act="day-set" data-k="${d.key}">
           ${bodyMap(dayMuscles(d.key), [], { labels: false, mini: true })}
           <div class="li-main"><div class="li-title">${d.name}${d.key === nextDayKey() ? ' <span class="tag accent">순서</span>' : ''}</div>
-          <div class="li-sub">${ago === null ? '아직 안 함' : ago ? `${ago}일 전` : '오늘 함'}</div></div>
+          <div class="li-sub">${ago === null ? '아직 안 했어요' : ago ? `${ago}일 전` : '오늘 했어요'}</div></div>
           <span class="rec-pill ${recClass(rd)}">${rd}%</span></button>`;
       }).join('')}</div>
-      <p class="faint mini" style="margin-top:10px">% = 그 루틴 근육들 회복도. 높을수록 오늘 하기 좋아.</p>`);
+      <p class="faint mini" style="margin-top:10px">%는 그 루틴에 쓰는 근육의 회복도예요. 높을수록 오늘 하기 좋아요.</p>`);
   },
   'day-set'(t) { ui.dayPick = t.dataset.k; closeSheet(); render(); },
 
@@ -177,24 +177,24 @@ const ACT = {
   'wo-start'(t) {
     const day = t.dataset.k;
     const legDay = dayMuscles(day).slice(0, 2).some(m => ['quads', 'glutes', 'hamstrings'].includes(m));
-    S.active = { id: uid(), date: today(), day, startedAt: Date.now(), items: planFor(day), cardio: { type: legDay ? 'bike' : 'stairs', min: 25, done: false }, restEnd: 0, restTotal: 0, say: '첫 세트는 워밍업 느낌으로' };
+    S.active = { id: uid(), date: today(), day, startedAt: Date.now(), items: planFor(day), cardio: { type: legDay ? 'bike' : 'stairs', min: 25, done: false }, restEnd: 0, restTotal: 0, say: '첫 세트는 몸을 푼다는 느낌으로 가볍게 하세요' };
     ui.dayPick = null; ui.wo = true;
     save(); render(); keepAwake();
   },
   'wo-open'() { ui.wo = true; render(); keepAwake(); },
   'wo-close'() { ui.wo = false; render(); },
   async 'wo-discard'() {
-    const ok = await confirmSheet({ title: '운동을 취소할까?', body: '오늘 한 세트 기록이 전부 사라져.', ok: '취소하기', danger: true });
+    const ok = await confirmSheet({ title: '운동을 취소할까요?', body: '오늘 한 세트 기록이 모두 사라져요.', ok: '취소하기', danger: true });
     if (!ok) return;
     S.active = null; ui.wo = false; save(); releaseAwake(); render();
   },
   async 'wo-finish'() {
     const a = S.active;
     const items = a.items.map(i => ({ exId: i.exId, method: i.method || 'straight', sets: i.sets.filter(s => s.done).map(s => ({ w: num(s.w), r: num(s.r), k: kindOf(s), rir: s.rir, at: s.at })) })).filter(i => i.sets.length);
-    if (!items.length && !a.cardio.done) { toast('한 세트도 안 했어. 하나라도 하고 끝내자'); return; }
+    if (!items.length && !a.cardio.done) { toast('아직 완료한 세트가 없어요. 한 세트라도 하고 끝내 주세요'); return; }
     const left = a.items.reduce((n, i) => n + i.sets.filter(s => !s.done).length, 0);
     if (left) {
-      const ok = await confirmSheet({ title: `${left}세트 남았어`, body: '남은 세트는 기록 안 돼. 끝낼 거야?', ok: '끝내기' });
+      const ok = await confirmSheet({ title: `${left}세트가 남았어요`, body: '남은 세트는 기록되지 않아요. 여기서 끝낼까요?', ok: '끝내기' });
       if (!ok) return;
     }
     const prs = [];
@@ -212,7 +212,7 @@ const ACT = {
   'set-done'(t) {
     const i = +t.dataset.i, j = +t.dataset.j, it = S.active.items[i], s = it.sets[j], e = ex(it.exId);
     if (s.done) { s.done = false; delete s.at; save(); renderWorkout(); return; }
-    if (!(num(s.r) > 0)) { toast('몇 회 했는지 적어'); return; }
+    if (!(num(s.r) > 0)) { toast('몇 회 했는지 적어 주세요'); return; }
     s.done = true; s.at = Date.now(); s.w = num(s.w); s.r = num(s.r);
     const k = kindOf(s), next = it.sets[j + 1];
     // 다음 같은 종류 세트 무게가 비어 있으면 채워주기
@@ -262,13 +262,13 @@ const ACT = {
     const alts = Object.keys(EXERCISES).filter(id => EXERCISES[id].group === e.group && !used.has(id))
       .sort((a, b) => EXERCISES[b].primary.filter(m => e.primary.includes(m)).length - EXERCISES[a].primary.filter(m => e.primary.includes(m)).length);
     openSheet(`${sheetHead('종목 바꾸기')}
-      <p>기구가 사용 중이면 같은 부위 다른 기구로.</p>
-      ${alts.length ? `<div class="list">${alts.map(id => { const x = EXERCISES[id], mc = machineOf(x); return `<button class="li" data-act="ex-swap-to" data-i="${i}" data-id="${id}"><div class="li-main"><div class="li-title">${x.name}</div><div class="li-sub">${mc ? zoneBadge(mc.zone) : ''} ${x.primary.map(m => MUSCLES[m]).join(', ')}</div></div><span class="chev">${icon('right', 18)}</span></button>`; }).join('')}</div>` : '<div class="empty">바꿀 수 있는 종목이 없어</div>'}
+      <p>기구를 누가 쓰고 있으면 같은 부위의 다른 기구로 바꿔 보세요.</p>
+      ${alts.length ? `<div class="list">${alts.map(id => { const x = EXERCISES[id], mc = machineOf(x); return `<button class="li" data-act="ex-swap-to" data-i="${i}" data-id="${id}"><div class="li-main"><div class="li-title">${x.name}</div><div class="li-sub">${mc ? zoneBadge(mc.zone) : ''} ${x.primary.map(m => MUSCLES[m]).join(', ')}</div></div><span class="chev">${icon('right', 18)}</span></button>`; }).join('')}</div>` : '<div class="empty">바꿀 수 있는 종목이 없어요</div>'}
       <button class="btn btn-danger" data-act="ex-remove" data-i="${i}">오늘은 이 종목 빼기</button>`, { full: true });
   },
   'ex-swap-to'(t) {
     const i = +t.dataset.i, cur = S.active.items[i];
-    if (cur.sets.some(s => s.done)) { toast('이미 한 세트 했어. 종목 추가로 넣어'); closeSheet(); return; }
+    if (cur.sets.some(s => s.done)) { toast('이미 한 세트를 했어요. 종목 추가로 넣어 주세요'); closeSheet(); return; }
     const e = ex(t.dataset.id);
     S.active.items[i] = buildItem(t.dataset.id, methodFits(cur.method || 'straight', e) ? cur.method || 'straight' : 'straight', { warm: cur.sets.some(s => kindOf(s) === 'W') });
     save(); closeSheet(); renderWorkout();
@@ -282,18 +282,25 @@ const ACT = {
         return ids.length ? `<h3 class="h3" style="margin-top:16px">${g.name}</h3><div class="list">${ids.map(id => { const mc = machineOf(EXERCISES[id]); return `<button class="li" data-act="ex-add-to" data-id="${id}"><div class="li-main"><div class="li-title">${EXERCISES[id].name}</div><div class="li-sub">${mc ? zoneBadge(mc.zone) : EXERCISES[id].equip}</div></div>${icon('plus', 18)}</button>`; }).join('')}</div>` : '';
       }).join('')}`);
   },
-  'ex-add-to'(t) { S.active.items.push(buildItem(t.dataset.id, 'straight')); save(); closeSheet(); renderWorkout(); toast(`${ex(t.dataset.id).name} 추가`); },
+  'ex-add-to'(t) { S.active.items.push(buildItem(t.dataset.id, 'straight')); save(); closeSheet(); renderWorkout(); toast(`${ex(t.dataset.id).name}을(를) 추가했어요`); },
 
   // 회복
   'rec-sel'(t) {
     const k = t.dataset.k;
     ui.recSel = k && k !== ui.recSel ? k : null;
-    const inst = Body3D.get(); if (inst) inst.select(ui.recSel);
+    if (ui.tab !== 'recovery') ui.tab = 'recovery';
     render();
-    if (ui.recSel && t.closest && t.closest('.rec-list')) window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (ui.recSel && !t.from3d) window.scrollTo({ top: 0, behavior: 'smooth' });
   },
   'rec-hours'(t) { ui.recHours = +t.dataset.k; render(); },
   'holo-face'(t) { const inst = Body3D.get(); if (inst) inst.face(t.dataset.k); },
+  'holo-zoom'(t) {
+    const inst = Body3D.get(), k = t.dataset.k;
+    if (!inst) return;
+    if (k === 'in') inst.zoomBy(1.4);
+    else if (k === 'out') inst.zoomBy(1 / 1.4);
+    else { inst.reset(); if (ui.recSel) { ui.recSel = null; render(); } }
+  },
 
   // 기록
   'hist-mode'(t) { ui.histMode = t.dataset.k; render(); },
@@ -314,7 +321,7 @@ const ACT = {
   },
   async 'session-del'(t) {
     const id = t.dataset.id;
-    const ok = await confirmSheet({ title: '기록을 삭제할까?', body: '자동 무게 계산이랑 회복 계산에도 반영돼.', ok: '삭제', danger: true });
+    const ok = await confirmSheet({ title: '기록을 삭제할까요?', body: '자동 무게 계산과 회복 계산에도 반영돼요.', ok: '삭제', danger: true });
     if (!ok) return;
     S.workouts = S.workouts.filter(w => w.id !== id); save(); render();
   },
@@ -333,7 +340,7 @@ const ACT = {
       <div class="card flat">${lineChart(pts, { unit })}</div>
       <h3 class="h3">최근 기록</h3>
       <div class="list">${rows.slice(-10).reverse().map(({ w, it }) => `<div class="li"><div class="li-main"><div class="li-title">${fmtShort(w.date)}${it.method && it.method !== 'straight' ? ` <span class="tag">${METHODS[it.method].name}</span>` : ''}</div><div class="li-sub num">${it.sets.map(s => fmtSet(s, e)).join('  ·  ')}</div></div></div>`).join('')}</div>
-      <p class="faint mini">추정 1RM = 지금 한 번에 들 수 있을 최대 무게 계산값. 직접 테스트하지 마.</p>`);
+      <p class="faint mini">추정 1RM은 지금 한 번에 들 수 있는 최대 무게를 계산한 값이에요. 직접 시도하지는 마세요.</p>`);
   },
 
   // 식단
@@ -350,7 +357,7 @@ const ACT = {
     slot.items.forEach(({ food: f, qty }) => {
       list.push({ id: uid(), meal: slot.meal, slot: slot.key, foodId: f.id, name: f.name, serving: f.serving, kcal: f.kcal, c: f.c, p: f.p, f: f.f, qty });
     });
-    save(); render(); toast(`${slot.name} 기록 완료`);
+    save(); render(); toast(`${slot.name}을(를) 기록했어요`);
   },
   'food-add'(t) { ui.foodMeal = t.dataset.k; ui.foodQ = ''; ui.foodTab = S.recentFoods.length ? 'recent' : 'all'; fullSheet(foodSheet()); },
   'food-tab'(t) { ui.foodTab = t.dataset.k; fullSheet(foodSheet()); },
@@ -368,7 +375,7 @@ const ACT = {
       S.recentFoods = [{ id: f.id, name: f.name, serving: f.serving, kcal: f.kcal, c: f.c, p: f.p, f: f.f }, ...S.recentFoods.filter(r => r.id !== f.id)].slice(0, 30);
     }
     save(); closeSheet(); render();
-    if (!p.editId) toast(`${f.name} 추가`);
+    if (!p.editId) toast(`${f.name}을(를) 추가했어요`);
   },
   entry(t) {
     const x = (S.meals[ui.dietDate] || []).find(e => e.id === t.dataset.id); if (!x) return;
@@ -384,15 +391,15 @@ const ACT = {
     const id = ui.pickFood.food.id;
     S.customFoods = S.customFoods.filter(f => f.id !== id);
     S.recentFoods = S.recentFoods.filter(f => f.id !== id);
-    save(); fullSheet(foodSheet()); toast('내 음식에서 지웠어');
+    save(); fullSheet(foodSheet()); toast('내 음식에서 지웠어요');
   },
   'food-custom'() { fullSheet(customSheet()); },
   'cf-save-toggle'(t) { ui.saveCustom = !ui.saveCustom; t.querySelector('.switch').classList.toggle('on', ui.saveCustom); },
   'cf-add'() {
     const v = id => $('#' + id).value.trim();
     const name = v('cf-name');
-    if (!name) { toast('음식 이름을 적어'); return; }
-    if (v('cf-kcal') === '') { toast('칼로리를 적어'); return; }
+    if (!name) { toast('음식 이름을 적어 주세요'); return; }
+    if (v('cf-kcal') === '') { toast('칼로리를 적어 주세요'); return; }
     const f = { id: 'c' + uid(), name, serving: v('cf-serving') || '1회', kcal: num(v('cf-kcal')), c: num(v('cf-c')), p: num(v('cf-p')), f: num(v('cf-f')), cat: '내 음식' };
     if (ui.saveCustom) S.customFoods.unshift(f);
     ui.pickFood = { food: f, qty: 1, meal: ui.foodMeal };
@@ -403,11 +410,11 @@ const ACT = {
   'body-log'() { openSheet(bodyLogSheet()); },
   'body-save'() {
     const w = num($('#bl-w').value), f = $('#bl-f').value.trim();
-    if (!(w >= 30 && w <= 250)) { toast('체중을 제대로 적어'); return; }
+    if (!(w >= 30 && w <= 250)) { toast('체중을 다시 확인해 주세요'); return; }
     const t = today();
     S.body = S.body.filter(b => b.date !== t);
     S.body.push({ date: t, weight: w, fat: f ? num(f) : null });
-    save(); closeSheet(); render(); toast('기록 완료');
+    save(); closeSheet(); render(); toast('기록했어요');
   },
   'body-del'(t) { S.body = S.body.filter(b => b.date !== t.dataset.k); save(); render(); openSheet(bodyLogSheet()); },
   'body-metric'(t) { ui.bodyMetric = t.dataset.k; render(); },
@@ -422,7 +429,7 @@ const ACT = {
   async 'photo-del'(t) {
     const id = t.dataset.id;
     ACT['viewer-close']();
-    const ok = await confirmSheet({ title: '사진을 삭제할까?', ok: '삭제', danger: true });
+    const ok = await confirmSheet({ title: '사진을 삭제할까요?', ok: '삭제', danger: true });
     if (!ok) return;
     await idb.del(id); ui.photos = null; loadPhotos();
   },
@@ -438,7 +445,7 @@ const ACT = {
   'set-sound'(t) { S.settings.sound = !S.settings.sound; save(); t.querySelector('.switch').classList.toggle('on', S.settings.sound); if (S.settings.sound) beep(); },
   export() { exportBackup(); },
   async reset() {
-    const ok = await confirmSheet({ title: '모든 기록을 지울까?', body: '운동, 식단, 체중, 사진이 전부 사라져. 먼저 백업하는 걸 추천해.', ok: '전부 지우기', danger: true });
+    const ok = await confirmSheet({ title: '모든 기록을 지울까요?', body: '운동, 식단, 체중, 사진이 모두 사라져요. 먼저 백업해 두시는 걸 권해요.', ok: '전부 지우기', danger: true });
     if (!ok) return;
     localStorage.removeItem(KEY);
     try { await idb.clear(); } catch (e) { /* 무시 */ }
@@ -472,8 +479,8 @@ const CHANGE = {
     try {
       const data = await resizeImage(file);
       await idb.put({ id: uid(), date: today(), data });
-      ui.photos = null; loadPhotos(); toast('눈바디 저장');
-    } catch (e) { toast('사진 저장 실패'); }
+      ui.photos = null; loadPhotos(); toast('눈바디 사진을 저장했어요');
+    } catch (e) { toast('사진을 저장하지 못했어요'); }
   },
   import(t) { const f = t.files && t.files[0]; if (f) importBackup(f); t.value = ''; },
 };
@@ -529,5 +536,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
+// 주소 뒤 #recovery 같은 탭 바로가기 (#recovery/chestUpper면 그 근육 선택)
+const [hashTab, hashSel] = location.hash.slice(1).split('/');
+if (TABS.some(t => t[0] === hashTab)) { ui.tab = hashTab; if (hashSel && SUBS[hashSel]) ui.recSel = hashSel; }
 render();
 if (S.active && ui.wo) keepAwake();

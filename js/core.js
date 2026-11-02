@@ -58,7 +58,7 @@ function load() {
   return structuredClone(DEFAULT);
 }
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('저장 공간이 부족해. 백업하고 사진 좀 정리하자'); }
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('저장 공간이 부족해요. 백업한 뒤 사진을 정리해 주세요'); }
 }
 
 // 눈바디 사진은 용량이 커서 IndexedDB에 따로 저장
@@ -324,6 +324,7 @@ function fatigueEvents() {
         const t = s.at || w.endedAt || w.startedAt;
         e.primary.forEach(m => ev.push([t, m, L]));
         e.secondary.forEach(m => ev.push([t, m, L * 0.5]));
+        Object.entries(subSharesOf(e)).forEach(([m, w]) => ev.push([t, m, L * w]));
       });
     });
   };
@@ -331,28 +332,36 @@ function fatigueEvents() {
   if (S.active) push({ ...S.active, items: S.active.items.map(i => ({ ...i, sets: i.sets.filter(s => s.done) })) }, ws.length);
   return ev;
 }
+// 근육별로 묶어 둔 피로 기록. 3주보다 오래된 건 회복 계산에 영향이 없어서 뺀다.
 let _evCache = null, _evKey = '';
 function events() {
-  const k = S.workouts.length + ':' + (S.active ? S.active.items.reduce((n, i) => n + i.sets.filter(s => s.done).length, 0) : -1);
-  if (k !== _evKey) { _evCache = fatigueEvents(); _evKey = k; }
+  const k = S.workouts.length + ':' + (S.active ? S.active.items.reduce((n, i) => n + i.sets.filter(s => s.done).length, 0) : -1) + ':' + today();
+  if (k !== _evKey) {
+    const from = Date.now() - 21 * 24 * HOUR, by = {};
+    fatigueEvents().forEach(([t, m, L]) => { if (t >= from) (by[m] = by[m] || []).push([t, L]); });
+    _evCache = by; _evKey = k;
+  }
   return _evCache;
 }
-const tauOf = m => (RECOVERY_H[m] || 60) * HOUR / Math.log(10);
+const tauOf = m => (RECOVERY_H[m] || (SUBS[m] && SUBS[m].h) || 60) * HOUR / Math.log(10);
 function fatigueAt(m, t, ev = events()) {
   let f = 0;
-  for (const [ti, mm, L] of ev) if (mm === m && ti <= t) f += L * Math.exp(-(t - ti) / tauOf(m));
+  const tau = tauOf(m);
+  for (const [ti, L] of ev[m] || []) if (ti <= t) f += L * Math.exp(-(t - ti) / tau);
   return f;
 }
 const recoveryAt = (m, t, ev) => Math.round(100 * (1 - Math.min(1, fatigueAt(m, t, ev) / FATIGUE_CAP)));
-function recoveryAll(t = Date.now()) {
+function recoveryAll(t = Date.now(), keys = Object.keys(MUSCLES)) {
   const ev = events(), out = {};
-  Object.keys(MUSCLES).forEach(m => { out[m] = recoveryAt(m, t, ev); });
+  keys.forEach(m => { out[m] = recoveryAt(m, t, ev); });
   return out;
 }
+const recoverySubs = (t = Date.now()) => recoveryAll(t, Object.keys(SUBS));
 // 90% 회복까지 남은 시간(ms). 이미 됐으면 0
 function etaReady(m, t = Date.now()) {
   const ev = events();
   if (recoveryAt(m, t, ev) >= 90) return 0;
+  if (!ev[m]) return 0;
   for (let h = 1; h <= 240; h++) if (recoveryAt(m, t + h * HOUR, ev) >= 90) return h * HOUR;
   return 240 * HOUR;
 }
@@ -370,10 +379,10 @@ const bodyReadiness = (rec = recoveryAll()) => {
   const ks = Object.keys(rec);
   return Math.round(ks.reduce((n, k) => n + rec[k], 0) / ks.length);
 };
-// 최근 7일 근육별 세트 수 (보조근 0.5)
-function weeklySets(endMs = Date.now()) {
+// 최근 7일 근육별 세트 수 (보조근 0.5). sub = true면 세부 근육 기준
+function weeklySets(endMs = Date.now(), sub = false) {
   const from = endMs - 7 * 24 * HOUR, out = {};
-  Object.keys(MUSCLES).forEach(m => { out[m] = 0; });
+  Object.keys(sub ? SUBS : MUSCLES).forEach(m => { out[m] = 0; });
   S.workouts.forEach(w => {
     if ((w.endedAt || w.startedAt) < from) return;
     w.items.forEach(it => {
@@ -381,6 +390,7 @@ function weeklySets(endMs = Date.now()) {
       it.sets.forEach(s => {
         const k = kindOf(s); if (k === 'W') return;
         const L = k === 'D' ? 0.5 : k === 'M' ? 0.33 : 1;
+        if (sub) { Object.entries(subSharesOf(e)).forEach(([m, w]) => { out[m] += L * w; }); return; }
         e.primary.forEach(m => { out[m] += L; });
         e.secondary.forEach(m => { out[m] += L * 0.5; });
       });

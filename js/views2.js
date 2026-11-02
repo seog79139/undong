@@ -3,12 +3,12 @@
 /* ---------- 식단 ---------- */
 function dietCoach(d, entries, tot, tg) {
   if (d !== today()) return '';
-  if (!entries.length) return '먹은 건 바로 찍어둬. 추천 식단은 한 번에 넣을 수 있어.';
-  if (tot.kcal > tg.kcal + 50) return `${fmtNum(tot.kcal - tg.kcal)}kcal 넘었어. 오늘은 여기까지.`;
+  if (!entries.length) return '먹은 음식은 바로 기록해 주세요. 추천 식단은 한 번에 넣을 수 있어요.';
+  if (tot.kcal > tg.kcal + 50) return `목표보다 ${fmtNum(tot.kcal - tg.kcal)}kcal 더 드셨어요. 오늘은 여기까지만 드세요.`;
   const left = tg.protein - tot.p;
-  if (left <= 5) return '단백질 다 채웠다. 잘 먹었어.';
+  if (left <= 5) return '단백질 목표를 다 채웠어요. 잘 드셨어요.';
   const f = left >= 30 ? ['닭가슴살 스테이크', 2] : left >= 18 ? ['단백질 음료', 1] : ['그릭요거트', 1];
-  return `단백질 ${left}g 남았어. ${f[0]}${f[1] > 1 ? ` ${f[1]}개` : ''}면 거의 끝.`;
+  return `단백질이 ${left}g 남았어요. ${f[0]}${f[1] > 1 ? ` ${f[1]}개` : ''} 정도면 거의 채워요.`;
 }
 function viewDiet() {
   const d = ui.dietDate, t = today();
@@ -62,7 +62,7 @@ function viewDiet() {
         <button class="meal-add" data-act="food-add" data-k="${meal}" aria-label="${meal} 추가">${icon('plus', 20)}</button></div>
         ${list.length ? list.map(x => `<button class="food-row" data-act="entry" data-id="${x.id}">
           <div class="li-main"><div class="li-title">${esc(x.name)}</div><div class="li-sub">${x.qty === 1 ? esc(x.serving) : `${esc(x.serving)} × ${fmtNum(x.qty)}`} · 단 ${Math.round(x.p * x.qty)}g</div></div>
-          <div class="li-end num">${fmtNum(Math.round(x.kcal * x.qty))}<small>kcal</small></div></button>`).join('') : '<div class="empty">아직 없음</div>'}
+          <div class="li-end num">${fmtNum(Math.round(x.kcal * x.qty))}<small>kcal</small></div></button>`).join('') : '<div class="empty">아직 기록이 없어요</div>'}
       </div>`;
     }).join('')}
     <div class="section-title"><span>식단 원칙</span></div>
@@ -78,7 +78,7 @@ function foodResults() {
   if (q) list = list.filter(f => f.name.replace(/\s/g, '').includes(q) || (f.cat || '').includes(q));
   list = list.slice(0, 120);
   if (!list.length) {
-    return `<div class="empty">${ui.foodTab === 'recent' ? '최근에 먹은 음식 없음' : ui.foodTab === 'mine' ? '직접 등록한 음식 없음' : '없는 음식이야. 아래에서 직접 등록해'}</div>`;
+    return `<div class="empty">${ui.foodTab === 'recent' ? '최근에 먹은 음식이 없어요' : ui.foodTab === 'mine' ? '직접 등록한 음식이 없어요' : '찾는 음식이 없어요. 아래에서 직접 등록해 주세요'}</div>`;
   }
   return `<div class="list">${list.map(f => `<button class="li" data-act="food-pick" data-id="${f.id}">
     <div class="li-main"><div class="li-title">${esc(f.name)}</div><div class="li-sub">${esc(f.serving)} · 탄 ${fmtNum(f.c)} 단 ${fmtNum(f.p)} 지 ${fmtNum(f.f)}</div></div>
@@ -94,7 +94,7 @@ function foodSheet() {
     </div>
     <div id="food-results">${foodResults()}</div>
     <button class="btn btn-soft" data-act="food-custom">${icon('plus', 20)} 직접 등록</button>
-    <p class="faint mini" style="margin-top:12px">칼로리는 1회 제공량 기준 대략치. 포장지 값이 있으면 직접 등록이 더 정확해.</p>`;
+    <p class="faint mini" style="margin-top:12px">칼로리는 1회 제공량 기준 대략적인 값이에요. 포장지에 영양 정보가 있으면 직접 등록하는 게 더 정확해요.</p>`;
 }
 function qtySheet() {
   const p = ui.pickFood, f = p.food, q = p.qty;
@@ -144,20 +144,20 @@ function viewBody() {
   return header('몸', `<button class="btn btn-primary btn-sm" data-act="body-log">${icon('plus', 18)}기록</button>`) + `
     <div class="grid2" style="margin-bottom:12px">
       <div class="card"><div class="card-label">체중</div><div class="big num">${last ? fmtNum(last.weight) : '–'}<small>kg</small></div>
-        <div class="sub num">${withW.length > 1 ? `${diff > 0 ? '+' : ''}${fmtNum(diff)}kg · ${daysBetween(first.date, last.date)}일` : '기록을 쌓아봐'}</div></div>
+        <div class="sub num">${withW.length > 1 ? `${diff > 0 ? '+' : ''}${fmtNum(diff)}kg · ${daysBetween(first.date, last.date)}일` : '기록을 쌓아 보세요'}</div></div>
       <div class="card"><div class="card-label">체지방률</div><div class="big num">${lastF ? fmtNum(lastF.fat) : '–'}<small>%</small></div>
-        <div class="sub">${lastF ? fmtShort(lastF.date) + ' 기준' : '인바디 재면 기록'}</div></div>
+        <div class="sub">${lastF ? fmtShort(lastF.date) + ' 기준' : '인바디를 재면 기록해 주세요'}</div></div>
     </div>
     <div class="card">
       <div class="card-label"><span>주간 변화 속도</span>${rate !== null ? `<b class="num ${rate <= 0 && rate >= -0.75 ? 'good' : 'warn'}">${rate > 0 ? '+' : ''}${fmtNum(rate)}%</b>` : ''}</div>
       <div class="pace"><i class="pace-ok"></i>${pos !== null ? `<b style="left:${pos}%"></b>` : ''}</div>
       <div class="pace-l"><span>−1.5%</span><span>적정 −0.75 ~ 0%</span><span>+1.5%</span></div>
-      <p class="sub">${rate === null ? '2주 정도 매일 재면 속도가 나와.' : rate < -0.75 ? '너무 빨리 빠져. 근육도 같이 빠질 수 있어. 식단 칼로리를 자동으로 올렸어.' : rate > 0.3 ? '늘고 있어. 칼로리를 자동으로 조금 줄였어.' : '딱 좋아. 지방 빼면서 근육 붙이는 속도.'}</p>
+      <p class="sub">${rate === null ? '2주 정도 매일 재면 변화 속도가 나와요.' : rate < -0.75 ? '체중이 너무 빨리 빠지고 있어요. 근육도 같이 빠질 수 있어서 식단 칼로리를 자동으로 올렸어요.' : rate > 0.3 ? '체중이 늘고 있어요. 칼로리를 자동으로 조금 줄였어요.' : '아주 좋아요. 지방을 빼면서 근육을 붙이기 좋은 속도예요.'}</p>
     </div>
     <div class="card">
       <div class="seg"><button class="${metric === 'weight' ? 'on' : ''}" data-act="body-metric" data-k="weight">체중</button><button class="${metric === 'fat' ? 'on' : ''}" data-act="body-metric" data-k="fat">체지방률</button></div>
       ${lineChart(pts, { unit: metric === 'weight' ? 'kg' : '%', trend })}
-      ${metric === 'weight' && pts.length > 1 ? '<p class="faint mini" style="margin:8px 0 0">진한 선 = 7일 평균. 하루 숫자는 물이라 평균만 봐.</p>' : ''}
+      ${metric === 'weight' && pts.length > 1 ? '<p class="faint mini" style="margin:8px 0 0">진한 선은 7일 평균이에요. 하루하루 숫자는 수분 영향이 커서 평균을 보시는 게 좋아요.</p>' : ''}
     </div>
     <div class="section-title"><span>눈바디</span><span class="faint mini">이 폰에만 저장</span></div>
     <div class="photos" id="photos"></div>`;
@@ -193,7 +193,7 @@ function bodyLogSheet() {
   const recent = bodySorted().reverse().slice(0, 10);
   return `${sheetHead('오늘 몸 기록')}
     <div class="field"><label>체중</label><div class="input-wrap"><input class="input num" id="bl-w" inputmode="decimal" value="${cur && cur.weight ? cur.weight : (latestWeight() || '')}"><span class="unit">kg</span></div></div>
-    <div class="field"><label>체지방률 (선택)</label><div class="input-wrap"><input class="input num" id="bl-f" inputmode="decimal" value="${cur && cur.fat ? cur.fat : ''}" placeholder="인바디 쟀을 때만"><span class="unit">%</span></div></div>
+    <div class="field"><label>체지방률 (선택)</label><div class="input-wrap"><input class="input num" id="bl-f" inputmode="decimal" value="${cur && cur.fat ? cur.fat : ''}" placeholder="인바디를 쟀을 때만"><span class="unit">%</span></div></div>
     <div class="btns"><button class="btn btn-primary" data-act="body-save">저장</button></div>
     ${recent.length ? `<h3 class="h3" style="margin-top:24px">최근 기록</h3><div class="list">${recent.map(b => `
       <div class="li"><div class="li-main"><div class="li-title num">${b.weight ? fmtNum(b.weight) + 'kg' : '–'}${b.fat ? ` · ${fmtNum(b.fat)}%` : ''}</div><div class="li-sub">${fmtDate(b.date)}</div></div>
@@ -202,12 +202,12 @@ function bodyLogSheet() {
 
 /* ---------- 가이드 (헬스장 지도 · 종목 · 기초) ---------- */
 const PRINCIPLES = [
-  { big: '2회', unit: '/주', title: '부위마다 주 2번', body: '같은 세트 수면 한 번에 몰아서보다 나눠서가 더 커' },
-  { big: '10–20', unit: '세트', title: '부위별 주간 세트', body: '처음엔 10세트 근처로 시작해서 늘리기' },
-  { big: '1–3', unit: '개', title: '남기고 멈추기', body: '매 세트 한계까지 갈 필요 없어. 피로만 쌓여' },
-  { big: '2–3', unit: '분', title: '다관절은 길게 쉬기', body: '짧게 쉬면 다음 세트 횟수가 무너져' },
-  { big: '↓2초', unit: '', title: '늘어나는 구간 천천히', body: '근육이 늘어난 자세가 성장 자극이 제일 커' },
-  { big: '+1', unit: '회', title: '횟수 → 무게 순서', body: '목표 횟수 다 채우면 그때 무게 올리기' },
+  { big: '2회', unit: '/주', title: '부위마다 주 2번', body: '같은 세트 수라면 한 번에 몰아서 하는 것보다 나눠서 하는 게 좋아요' },
+  { big: '10–20', unit: '세트', title: '부위별 주간 세트', body: '처음에는 10세트 정도로 시작해서 조금씩 늘려 가세요' },
+  { big: '1–3', unit: '개', title: '남기고 멈추기', body: '매 세트 한계까지 갈 필요는 없어요. 피로만 더 쌓여요' },
+  { big: '2–3', unit: '분', title: '다관절은 길게 쉬기', body: '너무 짧게 쉬면 다음 세트 횟수가 떨어져요' },
+  { big: '↓2초', unit: '', title: '늘어나는 구간 천천히', body: '근육이 늘어난 자세에서 성장 자극이 가장 커요' },
+  { big: '+1', unit: '회', title: '횟수 → 무게 순서', body: '목표 횟수를 다 채우면 그때 무게를 올려요' },
 ];
 function guideHub() {
   const tab = ui.guideTab;
@@ -224,7 +224,7 @@ function guideHub() {
           ${open ? `<div class="zone-ms">${ms.map(m => `<div class="zm"><b>${esc(m.model)}</b><span>${esc(m.brand)}${usedBy[m.id] ? ` · ${usedBy[m.id].slice(0, 2).join(', ')}` : ''}</span></div>`).join('')}</div>` : ''}`;
       }).join('')}</div>
       <div class="gym-facts"><div><span>덤벨</span><b>최대 ${GYM.dumbbellMax}kg</b></div><div><span>하프랙</span><b>5대</b></div><div><span>러닝머신</span><b>15대</b></div></div>
-      <p class="faint mini">구역은 짐박스 공식 배치도 기준. 구역 안 기구 순서는 매장 사정으로 바뀔 수 있어.</p>`;
+      <p class="faint mini">구역은 짐박스 공식 배치도를 기준으로 했어요. 구역 안 기구 순서는 매장 사정에 따라 바뀔 수 있어요.</p>`;
   } else if (tab === 'ex') {
     const g = ui.guideGroup;
     const inProg = new Set(prog().days.flatMap(d => d.items));
@@ -297,13 +297,13 @@ function methodSheet(scope, i) {
   const cur = it ? it.method : S.settings.method;
   const keys = Object.keys(METHODS).filter(k => scope === 'session' || k !== 'auto');
   return `${sheetHead(scope === 'item' ? `${e.name} 방식` : '세트 방식')}
-    ${scope === 'session' ? '<p>오늘 모든 종목에 적용돼. 운동 중에 종목마다 바꿀 수도 있어.</p>' : ''}
+    ${scope === 'session' ? '<p>오늘 모든 종목에 적용돼요. 운동 중에 종목마다 따로 바꿀 수도 있어요.</p>' : ''}
     <div class="method-list">${keys.map(k => {
       const m = METHODS[k], ok = !e || methodFits(k, e);
       return `<button class="mth ${k === cur ? 'on' : ''}" data-act="method-set" data-k="${k}" data-scope="${scope}" data-i="${i ?? ''}" ${ok ? '' : 'disabled'}>
         <span class="mth-ic">${icon(m.icon, 20)}</span>
         <span class="mth-t"><b>${m.name}</b><small>${m.desc}</small>${m.how ? `<em>${m.how}</em>` : ''}</span>
-        ${!ok ? '<span class="tag">이 종목엔 X</span>' : ''}
+        ${!ok ? '<span class="tag">이 종목엔 안 맞아요</span>' : ''}
       </button>`;
     }).join('')}</div>`;
 }
@@ -318,9 +318,9 @@ function platesSheet(i) {
   PLATES.forEach(p => { while (side >= p - 1e-6) { out.push(p); side = Math.round((side - p) * 100) / 100; } });
   return `${sheetHead('원판 계산')}
     <div class="plate-w"><b class="num">${fmtNum(w)}</b>kg${bar ? `<span>바 ${bar}kg 포함</span>` : '<span>원판 합계</span>'}</div>
-    <div class="plate-vis">${out.length ? out.map(p => `<i class="pl pl-${String(p).replace('.', '_')}" style="height:${40 + p * 4}px"><span>${fmtNum(p)}</span></i>`).join('') : '<span class="faint">원판 없음</span>'}<b class="pl-bar"></b></div>
+    <div class="plate-vis">${out.length ? out.map(p => `<i class="pl pl-${String(p).replace('.', '_')}" style="height:${40 + p * 4}px"><span>${fmtNum(p)}</span></i>`).join('') : '<span class="faint">원판이 필요 없어요</span>'}<b class="pl-bar"></b></div>
     <p style="text-align:center;font-weight:700">한쪽에 ${out.length ? out.map(fmtNum).join(' + ') : '0'}kg</p>
-    ${side > 0 ? `<p class="faint mini" style="text-align:center">${fmtNum(side)}kg는 원판으로 못 맞춰. 가까운 무게로 해.</p>` : ''}`;
+    ${side > 0 ? `<p class="faint mini" style="text-align:center">${fmtNum(side)}kg는 원판으로 맞출 수 없어요. 가장 가까운 무게로 해 주세요.</p>` : ''}`;
 }
 
 function settingsSheet() {
@@ -340,16 +340,16 @@ function settingsSheet() {
       const on = k === 'auto' ? st.restMode === 'auto' : st.restMode === 'fixed' && st.restSec === k;
       return `<button class="${on ? 'on' : ''}" data-act="set-rest" data-k="${k}">${l}</button>`;
     }).join('')}</div>
-    <p class="faint mini" style="margin:-8px 0 12px">자동: 다관절 2분 30초, 단관절 90초, 5×5는 3분</p>
+    <p class="faint mini" style="margin:-8px 0 12px">자동으로 하면 다관절 2분 30초, 단관절 90초, 5×5는 3분 쉬어요</p>
     <button class="between" style="width:100%;padding:6px 0 18px" data-act="set-sound"><span style="font-weight:600">휴식 끝 알림음</span><span class="switch ${st.sound ? 'on' : ''}"></span></button>
     <h3 class="h3">백업</h3>
-    <p class="mini">기록은 이 기기에만 저장돼. 폰 바꾸거나 컴퓨터로 옮길 땐 내보내고 불러오기.</p>
+    <p class="mini">기록은 이 기기에만 저장돼요. 폰을 바꾸거나 컴퓨터로 옮길 때는 내보낸 파일을 불러와 주세요.</p>
     <div class="btns two" style="margin-top:0">
       <button class="btn btn-soft btn-sm" style="width:100%" data-act="export">${icon('download', 18)}내보내기</button>
       <label class="btn btn-soft btn-sm" style="width:100%">${icon('upload', 18)}불러오기<input type="file" accept=".json,application/json" hidden data-change="import"></label>
     </div>
     <h3 class="h3" style="margin-top:24px">아이폰에 설치</h3>
-    <ol class="steps" style="font-size:15px"><li>사파리에서 이 페이지 열기</li><li>아래 공유 버튼</li><li>"홈 화면에 추가"</li></ol>
+    <ol class="steps" style="font-size:15px"><li>사파리에서 이 페이지를 열어요</li><li>아래쪽 공유 버튼을 눌러요</li><li>"홈 화면에 추가"를 눌러요</li></ol>
     <button class="btn btn-danger" data-act="reset">모든 기록 지우기</button>`;
 }
 
@@ -363,8 +363,8 @@ function openSummary(w) {
     ${w.prs.length ? `<ul class="pr-list" style="margin-top:14px">${w.prs.map(p => `<li><span>${say('pr', { ex: ex(p.exId).name })}</span><span class="num">${fmtSet(p.set, ex(p.exId))}</span></li>`).join('')}</ul>` : ''}
     <div class="sum-rec">
       ${bodyMap([], [], { values: rec, labels: false })}
-      <div><h3 class="h3">회복 예상</h3>${etas.map(([m, ms]) => `<div class="sum-eta"><span>${MUSCLES[m]}</span><b>${ms ? fmtWhen(Date.now() + ms) : '바로 OK'}</b></div>`).join('')}
-      <p class="faint mini" style="margin-top:8px">30분 안에 단백질 ${Math.round((latestWeight() || S.profile.weight) * 0.4)}g</p></div>
+      <div><h3 class="h3">회복 예상</h3>${etas.map(([m, ms]) => `<div class="sum-eta"><span>${MUSCLES[m]}</span><b>${ms ? fmtWhen(Date.now() + ms) : '바로 가능'}</b></div>`).join('')}
+      <p class="faint mini" style="margin-top:8px">30분 안에 단백질 ${Math.round((latestWeight() || S.profile.weight) * 0.4)}g을 드세요</p></div>
     </div>
     <div class="btns"><button class="btn btn-primary" data-act="sheet-close">확인</button></div>`);
 }
